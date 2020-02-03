@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "365767982497",
+    "firebase_url": "https://drillingservice-3fe56.firebaseio.com",
+    "project_id": "drillingservice-3fe56",
+    "storage_bucket": "drillingservice-3fe56.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365767982497:android:46242cfaf45a7dff289fe0",
+        "android_client_info": {
+          "package_name": "com.layerthree.aggdrilling"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "365767982497-9a7ihsk3p16l9sakag2hce65mmhvmv3a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.layerthree.aggdrilling",
+            "certificate_hash": "390576e5a5a2e5300c96f30a2f7137ad58a5490c"
+          }
+        },
+        {
+          "client_id": "365767982497-vhif87p7esq2613bch39kuee4aoceo68.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCD8nu1lM3NhTjxG9BNhcUyV0tHEKJ_jvw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "365767982497-vhif87p7esq2613bch39kuee4aoceo68.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
