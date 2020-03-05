@@ -1,13 +1,13 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 class Stage{
   String name;
   List<String> nextStages;
   List<String> actions;
   Stage(this.name);
-  Stage.fromSnapShot(DataSnapshot snapshot):
-        name = snapshot.value["name"],
-        nextStages = snapshot.value["nextSteps"],
-        actions = snapshot.value["actions"];
+  Stage.fromSnapShot(DocumentSnapshot snapshot):
+        name = snapshot.data["name"],
+        nextStages = snapshot.data["nextSteps"],
+        actions = snapshot.data["actions"];
   Stage.fromDs(Map<dynamic,dynamic> stage)
   {
     this.name = stage["name"];
