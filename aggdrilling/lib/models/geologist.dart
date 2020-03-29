@@ -1,19 +1,20 @@
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Geologist{
   String name;
   String phone;
   String address;
   String email;
+  String contactPerson;
+  bool isActive;
   Geologist(this.name,this.phone,this.address,this.email);
-  Geologist.fromDs(Map<dynamic,dynamic> ds){
-    this.name = ds["name"];
-    this.phone = ds["phone"];
-    this.address = ds["address"];
-    this.email = ds["email"];
-  }
-  static List<Geologist> fromDsList(List<dynamic> sizes)
-  {
-    List<Geologist> geologistList = sizes.map((entry) => Geologist.fromDs(entry)).toList();
-    return geologistList;
+  Geologist.fromDocumentSnapShot(DocumentSnapshot snapshot){
+    this.name = snapshot.data["name"];
+    this.phone = snapshot.data["phone"];
+    this.address = snapshot.data["address"];
+    this.email = snapshot.data["email"];
+    this.contactPerson = snapshot.data["contactPerson"];
+    this.isActive = snapshot.data["isActive"];
   }
 }

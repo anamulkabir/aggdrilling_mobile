@@ -1,29 +1,67 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'package:aggdrilling/models/project.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+typedef void OnCompleteLoad(User user);
 
 class User{
-  String name;
+  String firstName;
+  String middleName;
+  String lastName;
+  String email;
   String phone;
-  List<Permit> permitProjects;
-  User.fromSnapshot(DataSnapshot snapshot)
+  String role;
+  List<PermitProjects> permitProjects;
+  User.fromSnapshot(DocumentSnapshot snapshot)
   {
-    this.name = snapshot.value["name"];
-    this.phone = snapshot.value["phone"];
-    this.permitProjects = Permit.fromDsList(snapshot.value["permitProjects"]);
+    this.firstName = snapshot.data["firstName"];
+    this.lastName = snapshot.data["lastName"];
+    this.email = snapshot.data["email"];
+    this.phone = snapshot.data["phone"];
+    this.role = snapshot.data["role"];
+    this.permitProjects =  this.getAllPermitsFromDocumentSnapshot(snapshot);
+  }
+  List<PermitProjects> getAllPermitsFromDocumentSnapshot(DocumentSnapshot snapshot){
+    List<PermitProjects> permits = new List();
+    snapshot.reference.collection("permitProjects").getDocuments().then((QuerySnapshot querySnapShot){
+      for(DocumentSnapshot document in querySnapShot.documents)
+      {
+        permits.add(PermitProjects.fromDoc(document));
+      }
+      return permits;
+    });
+
+  }
+  List<PermitProjects> getAllPermits(DocumentSnapshot snapshot,OnCompleteLoad _OnLoadComplete) {
+    this.permitProjects = new List();
+    snapshot.reference.collection("permitProjects").getDocuments().then((QuerySnapshot querySnapShot){
+      for(DocumentSnapshot document in querySnapShot.documents)
+        {
+          this.permitProjects.add(PermitProjects.fromDoc(document));
+        }
+    _OnLoadComplete(this);
+    });
+  }
+
+  List<String> getProjectCode()
+  {
+    List<String> projectCodes =[];
+    for(PermitProjects permit in this.permitProjects)
+      {
+        projectCodes.add(permit.permitProject.projectCode);
+      }
+    return projectCodes;
   }
 }
-class Permit{
-  String code;
+class PermitProjects{
+  Project permitProject;
   List<String> permitSteps;
-  Permit(this.code,this.permitSteps);
-  Permit.fromDs(Map<dynamic,dynamic> permit)
+
+  PermitProjects(this.permitProject,this.permitSteps);
+
+  
+  PermitProjects.fromDoc(DocumentSnapshot documentSnapshot)
   {
-    this.code = permit["code"];
-    this.permitSteps = List.from(permit["permitSteps"]);
-  }
-  static List<Permit> fromDsList(List<dynamic> permits)
-  {
-    List<Permit> permitList = permits.map((entry) => Permit.fromDs(entry)).toList();
-    return permitList;
+    this.permitProject = Project.fromDs(documentSnapshot.data["project"]);
+   this.permitSteps = List.from(documentSnapshot.data["permitSteps"]);
   }
 
 }

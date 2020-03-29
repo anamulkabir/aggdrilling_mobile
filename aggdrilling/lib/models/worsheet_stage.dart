@@ -1,21 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-class Stage{
+class WorkSheetStage{
   String name;
   List<String> nextStages;
   List<String> actions;
-  Stage(this.name);
-  Stage.fromSnapShot(DocumentSnapshot snapshot):
+  WorkSheetStage(this.name);
+
+  WorkSheetStage.fromDocumentSnapShot(DocumentSnapshot snapshot):
         name = snapshot.data["name"],
-        nextStages = snapshot.data["nextSteps"],
-        actions = snapshot.data["actions"];
-  Stage.fromDs(Map<dynamic,dynamic> stage)
+        nextStages = List.from(snapshot.data["nextStages"]),
+        actions = List.from(snapshot.data["actions"]);
+  WorkSheetStage.fromDs(Map<dynamic,dynamic> stage)
   {
     this.name = stage["name"];
-    this.nextStages = List.from(stage["nextSteps"]);
+    this.nextStages = List.from(stage["nextStages"]);
     this.actions = List.from(stage["actions"]);
   }
-  static List<Stage> fromDsList(List<dynamic> stages){
-    List<Stage> stageList = stages.map((entry) => Stage.fromDs(entry)).toList();
+  static List<WorkSheetStage> fromDsList(List<dynamic> values){
+    List<WorkSheetStage> stageList = values.map((entry) => WorkSheetStage.fromDs(entry)).toList();
     return stageList;
   }
 }

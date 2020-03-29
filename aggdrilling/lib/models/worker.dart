@@ -1,17 +1,26 @@
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 class Worker{
-  String name;
+  String firstName;
+  String middleName;
+  String lastName;
   String designation;
+  String skills;
   String type;
-  Worker(this.name,this.designation);
-  Worker.fromSnapShot(DataSnapshot snapshot)
+  Worker(this.firstName,this.middleName, this.lastName, this.designation);
+  Worker.fromDocumentSnapShot(DocumentSnapshot snapshot)
   {
-    this.name = snapshot.value["name"];
-    this.designation = snapshot.value["designation"];
+    this.firstName = snapshot.data["firstName"];
+    this.middleName = snapshot.data["middleName"];
+    this.lastName = snapshot.data["lastName"];
+    this.designation = snapshot.data["designation"];
+    this.type = snapshot.data["type"];
   }
   Worker.fromDs(Map<dynamic,dynamic> worker)
   {
-    this.name  = worker["name"];
+    this.firstName  = worker["firstName"];
+    this.middleName  = worker["middleName"];
+    this.lastName  = worker["lastName"];
+    this.type  = worker["type"];
     this.designation = worker["designation"];
   }
   static List<Worker> fromDsList(List<dynamic> workers){

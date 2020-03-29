@@ -2,7 +2,7 @@ import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/pages/project_page.dart';
 import 'package:flutter/material.dart';
 import 'package:aggdrilling/services/authentication.dart';
-import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:aggdrilling/models/project.dart';
 import 'dart:async';
 
@@ -13,6 +13,7 @@ class HomePage extends StatefulWidget {
   final BaseAuth auth;
   final VoidCallback logoutCallback;
   final String userId;
+  
 
   @override
   State<StatefulWidget> createState() => new _HomePageState();
@@ -20,15 +21,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Project> _projectList;
-
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
+  final dbReference = Firestore.instance;
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
   final _textEditingController = TextEditingController();
-  StreamSubscription<Event> _onTodoAddedSubscription;
-  StreamSubscription<Event> _onTodoChangedSubscription;
-
-  Query _query;
+//  StreamSubscription<Event> _onTodoAddedSubscription;
+//  StreamSubscription<Event> _onTodoChangedSubscription;
   bool _isLoading;
   User _loginUser;
 
@@ -38,59 +36,44 @@ class _HomePageState extends State<HomePage> {
 
     _isLoading = true;
     _projectList = new List();
-    _query = _database
-        .reference()
-        .child("itts_test").child("users").child(widget.userId);
-    _query.once().then((DataSnapshot snapshot) {
-      _loginUser = User.fromSnapshot(snapshot);
-      if (_loginUser != null && _loginUser.permitProjects.length > 0) {
-        loadProject();
-      }
-      else {
-        setState(() {
-          _isLoading = false;
-        });
+    dbReference.collection('users')
+    .document(widget.userId).get()
+    .then((DocumentSnapshot ds){
+     _loginUser= User.fromSnapshot(ds);
+     _loginUser.getAllPermits(ds, (value){
+       if (_loginUser != null && _loginUser.permitProjects.length > 0) {
+         loadProject();
+       }
+       else {
+         setState(() {
+           _isLoading = false;
+         });
 
-      }
+       }
+     });
+
     });
 
   }
 
   loadProject() async{
-    _query = _database
-        .reference()
-        .child("itts_test").child("projects").child(_loginUser.permitProjects[0].code);
-    _query.once().then((DataSnapshot snapshot){
-      setState(() {
-        _isLoading = false;
-        _projectList.add(Project.fromSnapshot(snapshot));
-      });
-    } );
 
+     dbReference.collection('projects').where('projectCode',whereIn: _loginUser.getProjectCode() )
+        .snapshots().listen((QuerySnapshot querySnapShot){
+          querySnapShot.documents.forEach((document) {
+            _projectList.add(Project.fromSnapshot(document));
+            setState(() {
+              _isLoading = false;
+            });
+          });
+      });
   }
 
   @override
   void dispose() {
-    _onTodoAddedSubscription.cancel();
-    _onTodoChangedSubscription.cancel();
+//    _onTodoAddedSubscription.cancel();
+//    _onTodoChangedSubscription.cancel();
     super.dispose();
-  }
-
-  onEntryChanged(Event event) {
-    var oldEntry = _projectList.singleWhere((entry) {
-      return entry.key == event.snapshot.key;
-    });
-
-    setState(() {
-//      _projectList[_projectList.indexOf(oldEntry)] =
-//          Project.fromSnapshot(event.snapshot);
-    });
-  }
-
-  onEntryAdded(Event event) {
-    setState(() {
-//      _projectList.add(Project.fromSnapshot(event.snapshot));
-    });
   }
 
   signOut() async {
@@ -110,29 +93,6 @@ class _HomePageState extends State<HomePage> {
       width: 0.0,
     );
   }
-//  addNewTodo(String todoItem) {
-//    if (todoItem.length > 0) {
-//      Project todo = new Project(todoItem.toString(), widget.userId, false);
-//      _database.reference().child("todo").push().set(todo.toJson());
-//    }
-//  }
-
-//  updateTodo(Project project) {
-//    //Toggle completed
-//    todo.completed = !todo.completed;
-//    if (todo != null) {
-//      _database.reference().child("todo").child(todo.key).set(todo.toJson());
-//    }
-//  }
-//
-//  deleteTodo(String todoId, int index) {
-//    _database.reference().child("todo").child(todoId).remove().then((_) {
-//      print("Delete $todoId successful");
-//      setState(() {
-//        _projectList.removeAt(index);
-//      });
-//    });
-//  }
 
   showAddTodoDialog(BuildContext context) async {
     _textEditingController.clear();
@@ -180,7 +140,8 @@ class _HomePageState extends State<HomePage> {
             return Card(
             elevation: 0.0,
               child: ListTile(
-              title: Text(_projectList[index].projectCode),
+              title: Text(_projectList[index].projectCode,
+              style: TextStyle(fontSize:17.0,color: Colors.lightBlue ),),
                 subtitle: Text(_projectList[index].projectName),
                 trailing: IconButton(
                   icon: Icon(Icons.keyboard_arrow_right),
@@ -193,32 +154,9 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
+                contentPadding: const EdgeInsets.all(8.0),
               ),
             );
-//            return Dismissible(
-//              key: Key(code),
-//              background: Container(color: Colors.red),
-//              onDismissed: (direction) async {
-////                deleteTodo(todoId, index);
-//              },
-//              child: ListTile(
-//                title: Text(
-//                  code,
-//                  style: TextStyle(fontSize: 20.0),
-//                ),
-//                trailing: IconButton(
-//                    icon: (true)
-//                        ? Icon(
-//                      Icons.done_outline,
-//                      color: Colors.green,
-//                      size: 20.0,
-//                    )
-//                        : Icon(Icons.done, color: Colors.grey, size: 20.0),
-//                    onPressed: () {
-////                      updateTodo(_projectList[index]);
-//                    }),
-//              ),
-//            );
           });
     } else {
       return Center(
@@ -235,14 +173,90 @@ class _HomePageState extends State<HomePage> {
     return new Scaffold(
         appBar: new AppBar(
           title: new Text('Aggressive Drilling'),
-          actions: <Widget>[
-            new FlatButton(
-                child: new Text('Logout',
-                    style: new TextStyle(fontSize: 17.0, color: Colors.white)),
-                onPressed: signOut)
-          ],
         ),
         body: showProjectList(),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            _createHeader(),
+            _createDrawerItem(
+              icon: Icons.account_circle,
+              text: 'Change Password',
+              onTap: (){
+
+              }
+            ),
+            _createDrawerItem(
+                icon: Icons.power_settings_new,
+                text: 'Sign out',
+                onTap: () {
+                  _signOut(context);
+                }),
+            Divider(),
+
+            ListTile(
+              title: new Text('version: 0.1.1',),
+              //style: new TextStyle(fontSize: 17.0, color: Colors.lightBlue)
+            ),
+
+          ],
+        ),
+      ),
         );
+  }
+  Widget _createHeader() {
+    return UserAccountsDrawerHeader(
+        accountName: Text("Welcome ${_loginUser!=null?(_loginUser.firstName):''}"),
+        currentAccountPicture: CircleAvatar(
+          backgroundColor:
+          Theme.of(context).platform == TargetPlatform.iOS
+              ? Colors.blue
+              : Colors.white,
+          child: Text(
+            "${_loginUser!=null?_loginUser.firstName.substring(0,1):'A'}",
+            style: TextStyle(fontSize: 40.0),
+          ),
+        )
+        );
+  }
+  Widget _createDrawerItem(
+      {IconData icon, String text, GestureTapCallback onTap}) {
+    return ListTile(
+      title: Row(
+        children: <Widget>[
+          Icon(icon),
+          Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: Text(text),
+          )
+        ],
+      ),
+      onTap: onTap,
+    );
+  }
+  Future<bool> _signOut(BuildContext context){
+    return showDialog(
+        context: context,
+      child: AlertDialog(
+        title: Text('Sign Out'),
+        content: Text('Are you sure to sign out?'),
+        actions: <Widget>[
+          FlatButton(
+            onPressed: (){
+              Navigator.of(context).pop(false);
+            },
+            child: Text('No'),
+          ),
+          FlatButton(
+            onPressed: (){
+              signOut();
+              Navigator.of(context).pop(false);
+            },
+            child: Text('Yes'),
+          )
+        ],
+      ),
+    );
   }
 }
