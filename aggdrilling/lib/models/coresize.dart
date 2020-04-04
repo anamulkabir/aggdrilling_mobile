@@ -14,7 +14,16 @@ class CoreSize{
     }catch(error){
       throw error;
     }
-
   }
+  CoreSize.fromDS(Map<dynamic,dynamic> ds){
+    this.core = ds["core"];
+    this.size = ds["size"];
+    this.hole = ds["hole"];
+  }
+  Map<String, dynamic> toJson()=>{
+    'core': this.core,
+    'size': this.size,
+    'hole': this.hole,
+  };
 
 }

@@ -17,4 +17,17 @@ class Task
     this.taskId = snapshot.data["taskId"];
 //    this.isActive = ds["isActive"];
   }
+  Task.fromDs(Map<dynamic, dynamic> ds){
+    this.name = ds["name"];
+    this.taskType = ds["taskType"];
+    this.logType = ds["logType"];
+    this.taskId = ds["taskId"];
+  }
+  Map<String,dynamic> toJson()=>{
+    'name': this.name,
+    'taskType': this.taskType,
+    'logType': this.logType,
+    'taskId': this.taskId
+  };
+
 }

@@ -1,5 +1,6 @@
 import 'package:aggdrilling/models/project.dart';
 import 'package:aggdrilling/models/user.dart';
+import 'package:aggdrilling/models/worksheet.dart';
 import 'package:aggdrilling/models/worksheet_status.dart';
 import 'package:aggdrilling/pages/worksheet.dart';
 import 'package:aggdrilling/utils/common_functions.dart';
@@ -86,12 +87,7 @@ class _ProjectPageState extends State<ProjectPage>{
         IconButton(
           icon: Icon(Icons.add),
           onPressed: (){
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WorkSheetPage(mWorkSheet:null ,mProject: widget.mProject,mUser: widget.loginUser,),
-              ),
-            );
+            _worksheetUINavigator();
           },
         ),
         ],
@@ -99,6 +95,36 @@ class _ProjectPageState extends State<ProjectPage>{
       body: showWorkSheetList(),
     );
   }
+  _worksheetUINavigator() async {
+
+    String rsCb= await  Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context){
+         return WorkSheetPage(mWorkSheet:null ,mProject: widget.mProject,mUser: widget.loginUser,);
+        },
+      ),
+    );
+    if(rsCb !=null && rsCb.contains("reload")){
+      _isLoading = true;
+      loadProjectDetail();
+    }
+}
+_selectedWorksheetUINavigator(WorkSheet workSheet,) async{
+  String result= await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => WorkSheetPage(mWorkSheet:workSheet ,
+        mProject: widget.mProject,
+        mUser: widget.loginUser,
+      ),
+    ),
+  );
+  if(result.contains("reload")){
+    _isLoading = true;
+    loadProjectDetail();
+  }
+}
   Widget showWorkSheetList() {
     if(_isLoading)
       return _showCircularProgress();
@@ -107,17 +133,17 @@ class _ProjectPageState extends State<ProjectPage>{
           shrinkWrap: true,
           itemCount: widget.mProject.worksheet.length,
           itemBuilder: (BuildContext context, int index) {
-            WorkSheetStatus workSheetStatus;
-            String statusDesc=CommonFunction.getStatusDesc("");
-            var statusColor=CommonFunction.getStatusByColor("");
+//            WorkSheetStatus workSheetStatus;
+            String statusDesc=CommonFunction.getStatusDesc(widget.mProject.worksheet[index].currentStatus);
+            var statusColor=CommonFunction.getStatusByColor(widget.mProject.worksheet[index].currentStatus);
             if(widget.mProject.worksheet[index].status!=null &&
                 widget.mProject.worksheet[index].status.length>0) {
               widget.mProject.worksheet[index].status.sort((a, b) {
                 return b.entryDate.compareTo(a.entryDate);
               });
-               workSheetStatus = widget.mProject.worksheet[index].status[0];
-               statusDesc=CommonFunction.getStatusDesc(workSheetStatus.status);
-               statusColor = CommonFunction.getStatusByColor(workSheetStatus.status);
+//               workSheetStatus = widget.mProject.worksheet[index].status[0];
+//               statusDesc=CommonFunction.getStatusDesc(workSheetStatus.status);
+//               statusColor = CommonFunction.getStatusByColor(workSheetStatus.status);
             }
 
             return Card(
@@ -152,15 +178,7 @@ class _ProjectPageState extends State<ProjectPage>{
                     IconButton(
                       icon: Icon(Icons.keyboard_arrow_right),
                       onPressed: (){
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => WorkSheetPage(mWorkSheet:widget.mProject.worksheet[index] ,
-                                mProject: widget.mProject,
-                              mUser: widget.loginUser,
-                            ),
-                          ),
-                        );
+                      _selectedWorksheetUINavigator(widget.mProject.worksheet[index]);
                       },
                     ),
                   ],

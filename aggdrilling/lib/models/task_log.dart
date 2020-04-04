@@ -3,6 +3,7 @@ import 'package:aggdrilling/models/coresize.dart';
 import 'package:aggdrilling/models/task.dart';
 import 'package:aggdrilling/models/worker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class TaskLog{
   Task task;
@@ -12,11 +13,13 @@ class TaskLog{
   double endMeter;
   String shift;
   double workHours;
-  String remarks;
+  String comment;
   DateTime entryDate;
   String entryBy;
   Worker worker;
   CoreSize coreSize;
+  final formatDate = DateFormat("yyyy-MM-dd");
+  final formatDateTime = DateFormat("yyyy-MM-dd hh:mm:ss a");
   TaskLog({this.task,this.startTime,this.endTime});
   TaskLog.fromDs(Map<dynamic,dynamic> ds){
     this.task = ds["taskName"];// find the task from the meta data
@@ -31,32 +34,50 @@ class TaskLog{
       this.endMeter = ds["mTo"];
     }
     if(this.task.logType.contains("C")){
-      this.remarks = ds["remarks"];
+      this.comment = ds["remarks"];
     }
   }
   TaskLog.fromDocumentSnapShot(DocumentSnapshot document){
     try{
-      this.task = document.data["taskName"];// find the task from the meta data
+      this.task = Task.fromDs(document.data["task"]);// find the task from the meta data
       if(this.task.logType.contains("E"))
       {
-        this.worker = Worker.fromDocumentSnapShot(document);
+        this.worker = Worker.fromDs(document.data["worker"]);
       }
+      this.startTime = document.data["startTime"];
+      this.endTime = document.data["endTime"];
       this.shift = document.data["shift"];
       this.workHours = document.data["hoursWork"];
       if(this.task.logType.contains("P")){
-        this.startMeter = document.data["mFrom"];
-        this.endMeter = document.data["mTo"];
+        this.startMeter = document.data["startMeter"];
+        this.endMeter = document.data["endMeter"];
       }
       if(this.task.logType.contains("C")){
-        this.remarks = document.data["remarks"];
+        this.comment = document.data["comment"];
       }
       if(this.task.taskType.contains("coring")){
-        this.coreSize = CoreSize.fromDocumentSnapshot(document);
+        this.coreSize = CoreSize.fromDS(document.data["coreSize"]);
       }
+      this.entryBy = document.data["entryBy"];
+      this.entryDate = formatDateTime.parse(document.data["entryDate"]);
     }catch(error){
       error.toString();
     }
   }
+  Map<String,dynamic> toJson()=>{
+    'task':this.task.toJson(),
+    'startTime': this.startTime,
+    'endTime': this.endTime,
+    'startMeter': this.startMeter,
+    'endMeter': this.endMeter,
+    'shift': this.shift,
+    'workHours': this.workHours,
+    'comment': ''+this.comment,
+    'entryDate': formatDateTime.format(this.entryDate),
+    'entryBy': this.entryBy,
+    'coreSize': this.coreSize!=null?this.coreSize.toJson():null,
+    'worker': this.worker !=null?this.worker.toJson():null,
+  };
 
 }
 class UpdateHistory{

@@ -12,6 +12,7 @@ import 'package:aggdrilling/models/worker.dart';
 import 'package:aggdrilling/models/worksheet.dart';
 import 'package:aggdrilling/models/worksheet_status.dart';
 import 'package:aggdrilling/models/worsheet_stage.dart';
+import 'package:aggdrilling/utils/common_functions.dart';
 import 'package:aggdrilling/utils/input_format.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -28,14 +29,13 @@ class WorkSheetPage extends StatefulWidget{
   State<StatefulWidget> createState() {
     return new _WorkSheetPageState();
   }
-
 }
 class _WorkSheetPageState extends State<WorkSheetPage>{
   bool _isLoading;
   final format = DateFormat("yyyy-MM-dd");
+  final formatDateTime = DateFormat("yyyy-MM-dd hh:mm a");
   final timeFormat = DateFormat("hh:mm a");
-  final  _dbReference = Firestore.instance.collection('projects');
-  final _formKey = GlobalKey<FormState>();
+  final _dbReference = Firestore.instance.collection('projects');
   Rigs _selectedRigs;
   Holes _selectedHoles;
   Worker _selectedWorker;
@@ -49,9 +49,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   List<TaskLog> _taskLogs = new List();
   List<ConsumeMaterials> _consumeMaterials = new List();
   List<Comments> _comments;
+  Comments _selectedComments;
   List<String> _nextStages = new List();
   WorkSheetStage _worksheetStages;
-  WorkSheetStatus _workSheetStatus;
+  WorkSheetStatus _currentWorkSheetStatus;
+  WorkSheetStatus _selectedWorkSheetStatus;
   String _selectedStatus;
   AutoCompleteTextField<Rigs> ddlRigs;
   AutoCompleteTextField<Holes> ddlHoles;
@@ -68,13 +70,13 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   GlobalKey keyMaterialItems = new GlobalKey<AutoCompleteTextFieldState<MaterialItems>>();
   GlobalKey keyNextStages = new GlobalKey<AutoCompleteTextFieldState<String>>();
   final DateTimeWrapper _workDate = new DateTimeWrapper(dateTime:DateTime.now());
-  TimeWrapper _startTime = new TimeWrapper(timeOfDay: TimeOfDay.now());
-  TimeWrapper _endTime = new TimeWrapper(timeOfDay: TimeOfDay.now());
+  String _startTime;
+  String _endTime;
   bool taskLogAddNew = true;
   bool addNewMaterial = true;
   bool addNewRemark = true;
   bool worksheetUpdate = false;
-
+  bool hasPermitStatus = false;
   int taskIndexForUpdate = -1;
   int usedMaterialIndexForUpdate = -1;
   final rigController = new TextEditingController();
@@ -90,30 +92,59 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   final commentController = new TextEditingController();
   final nextStagesController = new TextEditingController();
 
-
   @override
   void initState() {
     super.initState();
-    ddlRigs = new AutoCompleteTextField<Rigs>(
-      decoration: new InputDecoration(
-        labelText: 'Rigs',
-        hintText: 'Select Rigs',
-      ),
-        itemSubmitted: (item) {
+    _startTime ="6:00 AM";
+    _endTime = "6:00 AM";
+    if(widget.mWorkSheet != null){
+      _isLoading = true;
+      loadWorksheetDetail();
+    }
+    else {
+      loadUI();
+      _isLoading = false;
+    }
+
+  }
+  loadWorksheetDetail() async{
+    _dbReference.document(widget.mProject.docId).collection("worksheet").
+    document(widget.mWorkSheet.docId).get().then((DocumentSnapshot snapshot){
+      widget.mWorkSheet.loadAllDs(snapshot, onComplete: (value)=>{
+      setState((){
+        _isLoading = false;
+        loadUI();
+      })
+      }, onError: (error)=>{
         setState(() {
-          _selectedRigs = item;
-          rigController.text=_selectedRigs.serial;
-        });
+          _isLoading = false;
+        }),
+        _showDialog(error),
+      });
+    });
+  }
+  loadUI(){
+    ddlRigs = new AutoCompleteTextField<Rigs>(
+        decoration: new InputDecoration(
+          labelText: 'Rigs',
+          hintText: 'Select Rigs',
+        ),
+        itemSubmitted: (item) {
+          setState(() {
+            _selectedRigs = item;
+            rigController.text=_selectedRigs.serial;
+            worksheetUpdate = true;
+          });
         },
         key: keyRigs,
         clearOnSubmit: false,
         minLength: 0,
         suggestions: widget.mProject.rigs,
         itemBuilder: (context,suggestion) => new Padding(
-            child: new ListTile(
-              title: new Text(suggestion.serial,
-              ),
+          child: new ListTile(
+            title: new Text(suggestion.serial,
             ),
+          ),
           padding: EdgeInsets.all(8.0),
         ),
         controller: rigController,
@@ -130,6 +161,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           setState(() {
             _selectedHoles = item;
             holeController.text=_selectedHoles.name;
+            worksheetUpdate = true;
           });
         },
         key: keyHoles,
@@ -157,6 +189,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         setState(() {
           _selectedTask = item;
           taskController.text=_selectedTask.name;
+//          worksheetUpdate = true;
         });
       },
       key: keyTasks,
@@ -183,6 +216,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           setState(() {
             _selectedWorker = item;
             workerController.text=_selectedWorker.lastName+' '+_selectedWorker.firstName;
+//            worksheetUpdate = true;
           });
         },
         key: keyWorker,
@@ -202,66 +236,67 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
     );
     ddlCoreSize = new AutoCompleteTextField<CoreSize>(
-        decoration: new InputDecoration(
-          labelText: 'CoreSize',
-          hintText: 'Select CoreSize',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-            _selectedCoreSize = item;
-            coreSizeController.text=_selectedCoreSize.core;
-          });
-        },
-        key: keyCoreSize,
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: widget.mProject.coreSizes,
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.core,
-            ),
+      decoration: new InputDecoration(
+        labelText: 'CoreSize',
+        hintText: 'Select CoreSize',
+      ),
+      itemSubmitted: (item) {
+        setState(() {
+          _selectedCoreSize = item;
+          coreSizeController.text=_selectedCoreSize.core;
+//          worksheetUpdate = true;
+        });
+      },
+      key: keyCoreSize,
+      clearOnSubmit: false,
+      minLength: 0,
+      suggestions: widget.mProject.coreSizes,
+      itemBuilder: (context,suggestion) => new Padding(
+        child: new ListTile(
+          title: new Text(suggestion.core,
           ),
-          padding: EdgeInsets.all(8.0),
         ),
-        controller: coreSizeController,
-        itemSorter: (a, b) => a.core.compareTo(b.core),
-        itemFilter: (suggestion,input) =>
-            suggestion.core.toLowerCase().startsWith(input.toLowerCase()),
+        padding: EdgeInsets.all(8.0),
+      ),
+      controller: coreSizeController,
+      itemSorter: (a, b) => a.core.compareTo(b.core),
+      itemFilter: (suggestion,input) =>
+          suggestion.core.toLowerCase().startsWith(input.toLowerCase()),
     );
     ddlMaterials = new AutoCompleteTextField<MaterialItems>(
       decoration: new InputDecoration(
-        labelText: 'Used Material',
-        hintText: 'Select Used materials'
+          labelText: 'Used Material',
+          hintText: 'Select Used materials'
       ),
-        itemSubmitted: (item){
+      itemSubmitted: (item){
         setState(() {
           _selectedMaterial = item;
           materialItemController.text = _selectedMaterial.name;
         });
-        },
-        key: keyMaterialItems,
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: widget.mProject.materials,
-        itemBuilder: (context,suggestion)=> new Padding(
+      },
+      key: keyMaterialItems,
+      clearOnSubmit: false,
+      minLength: 0,
+      suggestions: widget.mProject.materials,
+      itemBuilder: (context,suggestion)=> new Padding(
           child: new ListTile(
             title: new Text(suggestion.name),
-          ), 
-            padding: EdgeInsets.all(8.0)),
-        controller: materialItemController,
-        itemSorter: (a, b)=>a.name.compareTo(b.name),
-        itemFilter: (suggestion, input) =>
-            suggestion.name.toLowerCase().startsWith(input.toLowerCase()),
+          ),
+          padding: EdgeInsets.all(8.0)),
+      controller: materialItemController,
+      itemSorter: (a, b)=>a.name.compareTo(b.name),
+      itemFilter: (suggestion, input) =>
+          suggestion.name.toLowerCase().startsWith(input.toLowerCase()),
     );
-
     _isLoading = false;
     if(widget.mWorkSheet !=null) {
       loadWorkSheet(widget.mWorkSheet);
-      }
+    }
+    loadProjectPermitStatus();
+    checkPermitStatus();
   }
+
   void loadWorkSheet(WorkSheet workSheet){
-    if(workSheet==null)
-      return;
       _workDate.dateTime = workSheet.workDate;
       _selectedRigs = workSheet.rigs;
       rigController.text = _selectedRigs.serial;
@@ -270,10 +305,17 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _taskLogs = workSheet.taskLogs;
       _consumeMaterials = workSheet.consumeMaterials;
       _comments = workSheet.comments;
-    _workSheetStatus = getCurrentStatus(workSheet.status);
-    _worksheetStages = getWorkSheetStagesFromList(widget.mProject.workSheetStages,_workSheetStatus);
+  }
+  void loadProjectPermitStatus(){
+    if(widget.mWorkSheet == null){
+      _currentWorkSheetStatus = getCurrentStatus(null);
+    }
+    else
+      {
+        _currentWorkSheetStatus = getCurrentStatus(widget.mWorkSheet.status);
+      }
+    _worksheetStages = getWorkSheetStagesFromList(widget.mProject.workSheetStages,_currentWorkSheetStatus);
     _nextStages.addAll(_worksheetStages.nextStages);
-//    ddlNextStages.updateSuggestions(_nextStages);
     ddlNextStages = new AutoCompleteTextField<String>(
       decoration: new InputDecoration(
           labelText: 'Submit To',
@@ -285,7 +327,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           nextStagesController.text = _selectedStatus;
         });
       },
-//      key: keyNextStages,
       onFocusChanged: (hasFocus){},
       clearOnSubmit: false,
       minLength: 0,
@@ -300,13 +341,28 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       itemFilter: (suggestion, input) =>
           suggestion.toLowerCase().startsWith(input.toLowerCase()),
     );
-
-
+  }
+  void checkPermitStatus(){
+    PermitProjects permitProjects = widget.mUser.getUserPermitProjectByCode(widget.mProject.projectCode);
+    if(permitProjects != null && permitProjects.permitSteps.contains(_currentWorkSheetStatus.status)){
+      setState(() {
+        hasPermitStatus = true;
+      });
+    }
   }
   WorkSheetStatus getCurrentStatus(List<WorkSheetStatus> status)
   {
-    WorkSheetStatus status = new WorkSheetStatus('enableOP');
-    return status;
+    WorkSheetStatus workSheetStatus;
+    if(status == null || status.length==0) {
+      workSheetStatus = new WorkSheetStatus('enableOP');
+    }
+    else{
+      status.sort((a, b){
+       return b.entryDate.compareTo(a.entryDate);
+      });
+      workSheetStatus = status[0];
+    }
+    return workSheetStatus;
   }
   WorkSheetStage getWorkSheetStagesFromList(List<WorkSheetStage> stages,  WorkSheetStatus status){
     for(WorkSheetStage workSheetStage in stages){
@@ -355,7 +411,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           appBar: new AppBar(
             title: Text(widget.mProject.projectName),
               actions: <Widget>[
-                if(worksheetUpdate)
+                if(hasPermitStatus && worksheetUpdate)
                   new Padding(
                     padding: EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
                     child: IconButton(icon: Icon(Icons.done),
@@ -493,40 +549,12 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             new Expanded(
-              flex: 2,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(10, 0, 5, 0),
-                child: new TextFormField(
-                  decoration: const InputDecoration(
-                    hintText: 'Start Time',
-                    labelText: 'Start Time',
-                  ),
-                  onTap: (){
-                    FocusScope.of(context).requestFocus(new FocusNode());
-                    callTimePicker(_startTime);
-                  },
-                  controller:  TextEditingController(text: _startTime!=null && _startTime.timeOfDay !=null ?_startTime.timeOfDay.format(context) :''),
-
-                ),
-              ),
+              flex: 3,
+              child: _createStartTimeDdl(CommonFunction.getAllSiftWorkHours()),
             ),
             new Expanded(
-              flex: 2,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(10, 0, 5, 0),
-                child: new TextFormField(
-                  decoration: const InputDecoration(
-                    hintText: 'End Time',
-                    labelText: 'End Time',
-                  ),
-                  onTap: (){
-                    FocusScope.of(context).requestFocus(new FocusNode());
-                    callTimePicker(_endTime);
-                  },
-                  controller:  TextEditingController(text: _endTime!=null && _endTime.timeOfDay !=null?_endTime.timeOfDay.format(context) :''),
-
-                ),
-              ),
+              flex: 3,
+              child: _createEndTimeDdl(CommonFunction.getAllSiftWorkHours()),
             ),
             if(_selectedTask !=null && _selectedTask.logType.contains('P'))
             new Expanded(
@@ -546,8 +574,10 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   decoration: const InputDecoration(
                     hintText: 'Start(M)',
                     labelText: 'Start(M)',
+
                   ),
                   controller: startMController,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ),
@@ -571,13 +601,14 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                       labelText: 'End(M)',
                     ),
                     controller:  endMController,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
+            if(hasPermitStatus)
             new Expanded(
-              flex: 2,
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(5, 10, 5, 0),
+                padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 0),
                 child: IconButton(
                   icon: Icon(taskLogAddNew?Icons.add:Icons.done),
                   onPressed: () {
@@ -638,6 +669,40 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     );
 
   }
+  Widget _createStartTimeDdl(List<String> values){
+    return DropdownButton<String>(
+      hint: Text("Start Time"), // Not necessary for Option 1
+      value: _startTime,
+      onChanged: (newValue) {
+        setState(() {
+          _startTime = newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<String>(
+          child: new Text(data),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createEndTimeDdl(List<String> values){
+    return DropdownButton<String>(
+      hint: Text("End Time"), // Not necessary for Option 1
+      value: _endTime,
+      onChanged: (newValue) {
+        setState(() {
+          _endTime = newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<String>(
+          child: new Text(data),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
   Widget loadMaterialForm(){
     if(_isLoading){
       return _showCircularProgress();
@@ -674,12 +739,13 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
 
               ),
             ),
+            if(hasPermitStatus)
             new Expanded(
               flex: 2,
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(0, 10, 10, 10),
                   child: new IconButton(
-                    icon: Icon(addNewMaterial?Icons.arrow_forward_ios:Icons.done),
+                    icon: Icon(addNewMaterial?Icons.add:Icons.done),
                     onPressed: (){
                       setConsumeMaterial();
                     },
@@ -750,19 +816,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
 
               ),
             ),
-            new Expanded(
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
-                  child: new IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: (){
-                      setComment();
-                    },
-                  ),
-                )
-            ),
           ],
         ),
+        if(hasPermitStatus)
         new Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -780,8 +836,10 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
                   child: new FlatButton(
                     child: Text('Submit'),
+                    color: Colors.blueAccent,
+                    textColor: Colors.white,
                     onPressed: (){
-                      submitWorkSheet();
+                      _submitConfirmation(context);
                     },
                   ),
                 )
@@ -811,48 +869,69 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   }
   void setTaskLog(){
     if(isValidTask()){
-      if(taskLogAddNew){
-        TaskLog taskLog = new TaskLog(task: _selectedTask,
-            startTime: _startTime.timeOfDay.format(context),
-            endTime: _endTime.timeOfDay.format(context) );
+      TaskLog taskLog;
+      if(_taskLogs == null){
+        _taskLogs = new List();
+      }
+      var tempDayShiftStart = timeFormat.parse("6:00 AM");
+      var tempDayShiftEnd = timeFormat.parse("7:00 PM");
+      if(taskLogAddNew) {
+        taskLog = new TaskLog(task: _selectedTask,
+            startTime: _startTime,
+            endTime: _endTime
+        );
+      }
+      else {
+        if(taskIndexForUpdate>=0) {
+          taskLog = _taskLogs[taskIndexForUpdate];
+          taskLog.task = _selectedTask;
+          taskLog.startTime = _startTime;
+          taskLog.endTime = _endTime;
+        }
+      }
+        taskLog.coreSize = _selectedCoreSize;
         taskLog.startMeter = double.parse(startMController.text.isEmpty?"0":startMController.text);
         taskLog.endMeter = double.parse(endMController.text.isEmpty?"0":endMController.text);
         taskLog.worker = _selectedWorker;
+        var startTime = timeFormat.parse(taskLog.startTime);
+        var endTime = timeFormat.parse(taskLog.endTime);
+        if(startTime.isAfter(endTime))
+          endTime = endTime.add(Duration(days: 1));
+        var hoursWorked = endTime.difference(startTime);
+        var duration = (hoursWorked.inMinutes/60).toStringAsFixed(2);
+        taskLog.workHours=double.parse(duration);
         _selectedNote = noteController.text;
-        taskLog.remarks = _selectedNote;
+        taskLog.comment = _selectedNote;
         taskLog.coreSize = _selectedCoreSize;
-      }
-      else{
-        TaskLog taskLog;
-        if(taskIndexForUpdate>=0){
-          taskLog = _taskLogs[taskIndexForUpdate];
-          taskLog.task = _selectedTask;
-          taskLog.startTime = _startTime.timeOfDay.format(context);
-          taskLog.endTime = _endTime.timeOfDay.format(context);
-          taskLog.coreSize = _selectedCoreSize;
-          taskLog.worker = _selectedWorker;
-          _selectedNote = noteController.text;
-          taskLog.remarks = _selectedNote;
-          taskLog.startMeter = double.parse(startMController.text.isEmpty?"0":startMController.text);
-          taskLog.endMeter = double.parse(endMController.text.isEmpty?"0":endMController.text);
+
+        taskLog.entryDate = DateTime.now();
+        taskLog.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+        if(startTime.compareTo(tempDayShiftStart)>=0 && startTime.compareTo(tempDayShiftEnd)<=0){
+          taskLog.shift="D";
         }
-        setState(() {
+        else{
+          taskLog.shift="N";
+        }
+
+      setState(() {
         taskLogAddNew = true;
         worksheetUpdate = true;
         if(taskIndexForUpdate>=0){
-        _taskLogs[taskIndexForUpdate]=taskLog;
+          _taskLogs[taskIndexForUpdate]=taskLog;
         }
         else{
           _taskLogs.add(taskLog);
         }
         clearTaskInput();
-        });
+      });
       }
-    }
+
 
   }
   void clearTaskInput(){
     _selectedTask = null;
+    _startTime ="6:00 AM";
+    _endTime = "6:00 AM";
     _startMeter = 0;
     _endMeter = 0;
     _selectedWorker = null;
@@ -866,12 +945,33 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     endMController.text="";
     taskIndexForUpdate = -1;
   }
+  bool isValidWorkSheet(){
+    if(_selectedRigs == null){
+      _showDialog("Please choose Rigs");
+      return false;
+    }
+    if(_workDate == null){
+      _showDialog("Please put work date");
+      return false;
+    }
+    return true;
+  }
   bool isValidTask()
   {
+    if(_selectedTask == null){
+      _showDialog("Please Choose task");
+      return false;
+    }
+    if(_selectedTask.logType.contains('E')){
+      if(_selectedWorker == null){
+        _showDialog("Please worker!");
+            return false;
+      }
+    }
     return true;
   }
   void setConsumeMaterial(){
-    if(true){
+    if(isValidConsumeMaterial()){
       if(_consumeMaterials == null){
         _consumeMaterials = new List();
       }
@@ -886,6 +986,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         consumeMaterials.material = _selectedMaterial;
         consumeMaterials.qty = double.parse(materialQtyController.text.isEmpty?"0":materialQtyController.text);
       }
+      consumeMaterials.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+      consumeMaterials.entryDate = DateTime.now();
       setState(() {
         addNewMaterial = true;
         worksheetUpdate = true;
@@ -906,24 +1008,32 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     materialQtyController.text = "";
     materialItemController.text = "";
   }
-  void setComment(){
-    if(true){
-      if(_comments == null){
-        _comments = new List();
-      }
-      Comments comments;
-        comments = new Comments(commentController.text);
-        setState(() {
-          worksheetUpdate = true;
-          _comments.add(comments);
-          clearComment();
-        });
-      }
-
-  }
   void clearComment(){
     commentController.text = "";
+    _selectedStatus = null;
+    _selectedWorkSheetStatus = null;
   }
+  bool isValidConsumeMaterial()
+  {
+    if(_selectedMaterial == null){
+      _showDialog("Please Choose Material");
+      return false;
+    }
+    if(materialQtyController.text.isEmpty){
+        _showDialog("Please put quantity!");
+        return false;
+    }
+    return true;
+  }
+  bool isValidComment()
+  {
+    if(commentController.text.isEmpty){
+      _showDialog("Please put comment!");
+      return false;
+    }
+    return true;
+  }
+
   Future<DateTime> getDate() {
     // Imagine that this function is
     // more complex and slow.
@@ -955,15 +1065,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
 
     });
   }
-  void callTimePicker(TimeWrapper time) async {
-    TimeOfDay tod = await getTime();
-    setState(() {
-      if(tod !=null){
-        time.timeOfDay = tod;
-      }
-
-    });
-  }
+//  void callTimePicker(TimeWrapper time) async {
+//    TimeOfDay tod = await getTime();
+//    setState(() {
+//      if(tod !=null){
+//        time.timeOfDay = tod;
+//      }
+//
+//    });
+//  }
   Widget loadLogTaskList()
   {
     if(_isLoading)
@@ -977,7 +1087,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           },
           itemCount: _taskLogs.length,
           itemBuilder: (BuildContext context,int index){
-//            var format = DateFormat("hh:mm a");
             var startTime = timeFormat.parse(_taskLogs[index].startTime);
             var endTime = timeFormat.parse(_taskLogs[index].endTime);
             if(startTime.isAfter(endTime))
@@ -986,9 +1095,14 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             var duration = (hoursWorked.inMinutes/60).toStringAsFixed(2);
             _startMeter = _taskLogs[index].startMeter;
             _endMeter = _taskLogs[index].endMeter;
-             var workDoneProgress = (_endMeter -_startMeter).abs();
-            String displayProgress = workDoneProgress.toStringAsFixed(2)+"M";
-            var displayNote = _taskLogs[index].remarks;
+
+            String displayProgress;
+            double workDoneProgress=0;
+            if(_endTime !=null && _startMeter !=null){
+              workDoneProgress = (_endMeter -_startMeter).abs();
+             displayProgress = workDoneProgress.toStringAsFixed(2)+"M";
+            }
+            String displayNote = _taskLogs[index].comment!=null?_taskLogs[index].comment:"";
             return new Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1002,7 +1116,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 new Expanded(
                   flex:2,
                   child:ListTile(
-                    title: Text(_taskLogs[index].worker!=null?_taskLogs[index].worker.lastName+' '+_taskLogs[index].worker.firstName:'-'),
+                    title: Text(_taskLogs[index].worker!=null?_taskLogs[index].worker.lastName+' '+_taskLogs[index].worker.firstName:''),
                   ),
                 ),
                 new Expanded(
@@ -1157,13 +1271,13 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         coreSizeController.text =_selectedCoreSize!=null?_selectedCoreSize.core:'';
         _selectedWorker =_taskLogs[index].worker;
         workerController.text=_selectedWorker!=null? _selectedWorker.lastName:'';
-        _startTime = new TimeWrapper(timeOfDay: TimeOfDay.fromDateTime(timeFormat.parse(_taskLogs[index].startTime)));
-        _endTime = new TimeWrapper(timeOfDay: TimeOfDay.fromDateTime(timeFormat.parse(_taskLogs[index].endTime)));
+        _startTime = _taskLogs[index].startTime;
+        _endTime = _taskLogs[index].endTime;
         _startMeter =_taskLogs[index].startMeter;
-        startMController.text=_startMeter.toString();
+        startMController.text=_startMeter !=null?_startMeter.toString():"";
         _endMeter = _taskLogs[index].endMeter;
-        endMController.text = _endMeter.toString();
-        _selectedNote = _taskLogs[index].remarks;
+        endMController.text = _endMeter !=null?_endMeter.toString():"";
+        _selectedNote = _taskLogs[index].comment;
         noteController.text = _selectedNote;
       }
   }
@@ -1178,7 +1292,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     }
   }
   void saveWorkSheet(){
-
+    if(!isValidWorkSheet()) {
+      return;
+    }
     if(widget.mWorkSheet==null)
       {
         widget.mWorkSheet = new WorkSheet(null, null);
@@ -1191,25 +1307,138 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     widget.mWorkSheet.taskLogs = _taskLogs;
     widget.mWorkSheet.consumeMaterials = _consumeMaterials;
     widget.mWorkSheet.comments = _comments;
+    saveWorkSheetDB();
 //    widget.mWorkSheet.status;
     setState(() {
       worksheetUpdate = false;
     });
 
   }
+  void saveWorkSheetDB() async{
+    if(widget.mWorkSheet !=null){
+      try {
+        if (widget.mWorkSheet.docId == null ||
+            widget.mWorkSheet.docId.isEmpty) {
+          DocumentReference ref = await _dbReference.document(
+              widget.mProject.docId).
+          collection("worksheet").add(widget.mWorkSheet.toJson());
+          for (TaskLog taskLog in widget.mWorkSheet.taskLogs) {
+            await ref.collection("taskLogs").add(
+                taskLog.toJson()
+            );
+          }
+          for (ConsumeMaterials material in widget.mWorkSheet
+              .consumeMaterials) {
+            await ref.collection("consumeMaterials").add(
+                material.toJson()
+            );
+          }
+          if (_selectedComments != null) {
+            await ref.collection("msg").add(
+                _selectedComments.toJson()
+            );
+          }
+          if(_selectedWorkSheetStatus != null){
+            await ref.collection("status").add(_selectedWorkSheetStatus.toJson());
+            await ref.updateData({"currentStatus":_selectedWorkSheetStatus.status});
+          }
+
+        }
+        else {
+          DocumentReference ref = await _dbReference.document(
+              widget.mProject.docId).
+          collection("worksheet").document(widget.mWorkSheet.docId);
+          ref.setData(widget.mWorkSheet.toJson());
+          ref.collection("taskLogs").getDocuments().then((snapshot) {
+            for (DocumentSnapshot docs in snapshot.documents) {
+              docs.reference.delete();
+            }
+            for (TaskLog taskLog in widget.mWorkSheet.taskLogs) {
+              ref.collection("taskLogs").add(
+                  taskLog.toJson()
+              );
+            }
+          });
+
+          ref.collection("consumeMaterials").getDocuments().then((snapshot) {
+            for (DocumentSnapshot docs in snapshot.documents) {
+              docs.reference.delete();
+            }
+            for (ConsumeMaterials material in widget.mWorkSheet
+                .consumeMaterials) {
+              ref.collection("consumeMaterials").add(
+                  material.toJson()
+              );
+            }
+          });
+
+          if (_selectedComments != null) {
+            await ref.collection("msg").add(
+                _selectedComments.toJson()
+            );
+          }
+          if(_selectedWorkSheetStatus != null){
+            await ref.collection("status").add(_selectedWorkSheetStatus.toJson());
+            await ref.updateData({"currentStatus":_selectedWorkSheetStatus.status});
+          }
+        }
+        clearTaskInput();
+        clearConsumeMaterialInput();
+        clearComment();
+        Navigator.pop(context, 'reload');
+      }catch(exception){
+        _showDialog(exception.toString());
+      }
+
+    }
+  }
   void submitWorkSheet(){
     _selectedStatus = nextStagesController.text;
+    _selectedComments = new Comments(commentController.text);
+    _selectedComments.entryDate = DateTime.now();
+    _selectedComments.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+    if(_selectedStatus!=null && _selectedStatus.isNotEmpty){
 
+      _selectedWorkSheetStatus = new WorkSheetStatus(_selectedStatus);
+      _selectedWorkSheetStatus.entryBy=widget.mUser.email;
+      _selectedWorkSheetStatus.entryDate = new DateTime.now();
+    }
+    saveWorkSheet();
+  }
+   _submitConfirmation(BuildContext context){
+    if(nextStagesController.text.isEmpty){
+      _showDialog("Select Submit to ");
+      return false;
+    }
+
+    return showDialog(
+      context: context,
+      child: AlertDialog(
+        title: Text('Submit Worksheet'),
+        content: Text('Are you sure to submit the worksheet?'),
+        actions: <Widget>[
+          FlatButton(
+            onPressed: (){
+              Navigator.of(context).pop(false);
+            },
+            child: Text('No'),
+          ),
+          FlatButton(
+            onPressed: (){
+              submitWorkSheet();
+              Navigator.of(context).pop(false);
+            },
+            child: Text('Yes'),
+          )
+        ],
+      ),
+    );
   }
 
 }
 class DateTimeWrapper{
   DateTime dateTime;
   DateTimeWrapper({this.dateTime});
-}
-class TimeWrapper{
-  TimeOfDay timeOfDay;
-  TimeWrapper({this.timeOfDay});
 }
 class TabMenu {
   const TabMenu({this.title, this.shortName, this.icon});
@@ -1221,7 +1450,7 @@ class TabMenu {
 
 const List<TabMenu> choices = const <TabMenu>[
   const TabMenu(title: 'Tasks', shortName: 'task', icon: Icons.directions_car),
-  const TabMenu(title: 'Used Materials', shortName: 'material', icon: Icons.directions_bike),
+  const TabMenu(title: 'Used Materials', shortName: 'material', icon: Icons.arrow_forward),
   const TabMenu(title: 'Remark/Submit',shortName: 'remark', icon: Icons.directions_boat),
 ];
 

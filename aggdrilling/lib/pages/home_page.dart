@@ -71,8 +71,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-//    _onTodoAddedSubscription.cancel();
-//    _onTodoChangedSubscription.cancel();
     super.dispose();
   }
 
@@ -92,41 +90,6 @@ class _HomePageState extends State<HomePage> {
       height: 0.0,
       width: 0.0,
     );
-  }
-
-  showAddTodoDialog(BuildContext context) async {
-    _textEditingController.clear();
-    await showDialog<String>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            content: new Row(
-              children: <Widget>[
-                new Expanded(
-                    child: new TextField(
-                      controller: _textEditingController,
-                      autofocus: true,
-                      decoration: new InputDecoration(
-                        labelText: 'Add new todo',
-                      ),
-                    ))
-              ],
-            ),
-            actions: <Widget>[
-              new FlatButton(
-                  child: const Text('Cancel'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  }),
-              new FlatButton(
-                  child: const Text('Save'),
-                  onPressed: () {
-//                    addNewTodo(_textEditingController.text.toString());
-                    Navigator.pop(context);
-                  })
-            ],
-          );
-        });
   }
 
   Widget showProjectList() {

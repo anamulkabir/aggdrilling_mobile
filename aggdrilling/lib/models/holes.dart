@@ -5,6 +5,7 @@ class Holes{
   String name;
   Holes(this.code,this.name);
   Holes.fromDs(Map<dynamic,dynamic> ds){
+    if(ds == null) return;
     this.code = ds["code"];
     this.name = ds["name"];
   }
@@ -12,4 +13,8 @@ class Holes{
     this.code = snapshot.data["code"];
     this.name = snapshot.data["name"];
   }
+  Map<dynamic,dynamic> toJson()=>{
+    'code': this.code,
+    'name': this.name,
+  };
 }

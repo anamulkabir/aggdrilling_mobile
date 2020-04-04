@@ -27,4 +27,11 @@ class Worker{
     List<Worker> workerList = workers.map((entry) => Worker.fromDs(entry)).toList();
     return workerList;
   }
+  Map<String, dynamic> toJson()=>{
+    'firstName':this.firstName,
+    'middleName': this.middleName,
+    'lastName': this.lastName,
+    'type': this.type,
+    'designation': this.designation
+  };
 }

@@ -50,6 +50,16 @@ class User{
       }
     return projectCodes;
   }
+  PermitProjects getUserPermitProjectByCode(String code)
+  {
+    PermitProjects permitProjects;
+    for(PermitProjects permit in this.permitProjects)
+    {
+      if(permit.permitProject.projectCode.contains(code))
+        permitProjects = permit;
+    }
+    return permitProjects;
+  }
 }
 class PermitProjects{
   Project permitProject;

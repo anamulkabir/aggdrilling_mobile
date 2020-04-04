@@ -18,4 +18,10 @@ class MaterialItems{
       this.group = snapshot.data["group"];
       this.unit = snapshot.data["unit"];
   }
+  Map<String, dynamic> toJson()=>{
+    'name': this.name,
+    'decription': this.description,
+    'group': this.group,
+    'unit': this.unit
+  };
 }

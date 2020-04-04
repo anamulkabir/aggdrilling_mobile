@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "365767982497-r822rlj00rorcj52eq5hoqbt6oueq62v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.layerthree.aggdrilling",
+            "certificate_hash": "d3fb5ddb9610f4fdc1bf10a147a40a2941163509"
+          }
+        },
+        {
           "client_id": "365767982497-9a7ihsk3p16l9sakag2hce65mmhvmv3a.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -38,6 +46,13 @@
             {
               "client_id": "365767982497-vhif87p7esq2613bch39kuee4aoceo68.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "365767982497-nmm4fs2nv56fjjaer34q87t4hkd69n6h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.layerthree.aggdrilling"
+              }
             }
           ]
         }
