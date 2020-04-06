@@ -4,6 +4,7 @@ import 'package:aggdrilling/models/material.dart';
 import 'package:aggdrilling/models/task.dart';
 import 'package:aggdrilling/models/rigs.dart';
 import 'package:aggdrilling/models/holes.dart';
+import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/models/worker.dart';
 import 'package:aggdrilling/models/worksheet.dart';
 import 'package:aggdrilling/models/worsheet_stage.dart';
@@ -17,7 +18,7 @@ class Project{
   String projectName;
   DateTime startDate;
   DateTime entryDate;
-  String entryBy;
+  User entryBy;
   String status;
   //
   List<WorkSheetStage> workSheetStages;
@@ -40,7 +41,7 @@ class Project{
     try{
       this.startDate = DateTime.parse(ds["startDate"]);
       this.entryDate = DateTime.parse(ds["entryDate"]);
-      this.entryBy =  ds["entryBy"];
+      this.entryBy =  User.fromDs(ds["entryBy"]);
       this.status = ds["status"];
     }catch(error){
       error.toString();
@@ -53,7 +54,7 @@ class Project{
       try{
         this.startDate = DateTime.parse(snapshot.data["startDate"]);
         this.entryDate = DateTime.parse(snapshot.data["entryDate"]);
-        this.entryBy =  snapshot.data["entryBy"];
+        this.entryBy =  User.fromDs(snapshot.data["entryBy"]);
         this.status = snapshot.data["status"];
       }catch(error){
         error.toString();

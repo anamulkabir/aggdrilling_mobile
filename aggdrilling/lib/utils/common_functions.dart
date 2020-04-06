@@ -39,7 +39,7 @@ static Color getStatusByColor(String status){
 }
 static List<String> getAllSiftWorkHours(){
   List<String> shiftHours = new List();
-  int initialHOur=6;
+  int initialHOur=7;
   bool isAm=true;
   for(int i=0;i<24;i++){
     if(initialHOur==12){

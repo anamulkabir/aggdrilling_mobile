@@ -1,6 +1,7 @@
 
 import 'package:aggdrilling/models/coresize.dart';
 import 'package:aggdrilling/models/task.dart';
+import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/models/worker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,7 @@ class TaskLog{
   double workHours;
   String comment;
   DateTime entryDate;
-  String entryBy;
+  User entryBy;
   Worker worker;
   CoreSize coreSize;
   final formatDate = DateFormat("yyyy-MM-dd");
@@ -58,7 +59,7 @@ class TaskLog{
       if(this.task.taskType.contains("coring")){
         this.coreSize = CoreSize.fromDS(document.data["coreSize"]);
       }
-      this.entryBy = document.data["entryBy"];
+      this.entryBy = User.fromDs(document.data["entryBy"]);
       this.entryDate = formatDateTime.parse(document.data["entryDate"]);
     }catch(error){
       error.toString();
@@ -74,7 +75,7 @@ class TaskLog{
     'workHours': this.workHours,
     'comment': ''+this.comment,
     'entryDate': formatDateTime.format(this.entryDate),
-    'entryBy': this.entryBy,
+    'entryBy': this.entryBy.toJson(),
     'coreSize': this.coreSize!=null?this.coreSize.toJson():null,
     'worker': this.worker !=null?this.worker.toJson():null,
   };

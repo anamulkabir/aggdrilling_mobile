@@ -3,6 +3,7 @@ import 'package:aggdrilling/models/rigs.dart';
 import 'package:aggdrilling/models/holes.dart';
 import 'package:aggdrilling/models/task_log.dart';
 import 'package:aggdrilling/models/used_materials.dart';
+import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/models/worksheet_status.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
@@ -14,7 +15,7 @@ class WorkSheet{
   String docId;
   DateTime workDate;
   DateTime entryDate;
-  String entryBy;
+  User entryBy;
   Holes holes;
   Rigs rigs;
   List<TaskLog> taskLogs;
@@ -33,12 +34,13 @@ class WorkSheet{
       try{
         this.docId = snapshot.documentID;
         this.status = snapshot.data["status"];
-        this.entryBy = snapshot.data["entryBy"];
+
         this.currentStatus = snapshot.data["currentStatus"];
         this.workDate = DateTime.parse(snapshot.data["workDate"]);
         this.rigs = Rigs.fromDs(snapshot.data["rigs"]);
         this.holes = Holes.fromDs(snapshot.data["holes"]);
         this.entryDate = formatDateTime.parse(snapshot.data["entryDate"]);
+        this.entryBy = User.fromDs(snapshot.data["entryBy"]);
       }catch(error){
         error.toString();
       }
@@ -109,7 +111,7 @@ class WorkSheet{
       {
         'workDate':formatDate.format(this.workDate),
         'entryDate':formatDateTime.format(this.entryDate),
-        'entryBy': this.entryBy,
+        'entryBy': this.entryBy.toJson(),
         'holes': this.holes !=null?this.holes.toJson():null,
         'rigs': this.rigs !=null?this.rigs.toJson():null,
         'currentStatus': this.currentStatus,

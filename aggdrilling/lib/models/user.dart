@@ -19,6 +19,20 @@ class User{
     this.role = snapshot.data["role"];
     this.permitProjects =  this.getAllPermitsFromDocumentSnapshot(snapshot);
   }
+  User.fromDs(Map<dynamic, dynamic> ds){
+    this.firstName = ds["firstName"];
+    this.lastName = ds["lastName"];
+    this.email = ds["email"];
+    this.phone = ds["phone"];
+    this.role = ds["role"];
+  }
+  Map<String, dynamic> toJson()=>{
+    'firstName': this.firstName,
+    'lastName': this.lastName,
+    'email': this.email,
+    'phone': this.phone,
+    'role': this.role
+  };
   List<PermitProjects> getAllPermitsFromDocumentSnapshot(DocumentSnapshot snapshot){
     List<PermitProjects> permits = new List();
     snapshot.reference.collection("permitProjects").getDocuments().then((QuerySnapshot querySnapShot){

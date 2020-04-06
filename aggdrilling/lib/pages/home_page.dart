@@ -143,13 +143,13 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             _createHeader(),
-            _createDrawerItem(
-              icon: Icons.account_circle,
-              text: 'Change Password',
-              onTap: (){
-
-              }
-            ),
+//            _createDrawerItem(
+//              icon: Icons.account_circle,
+//              text: 'Change Password',
+//              onTap: (){
+//
+//              }
+//            ),
             _createDrawerItem(
                 icon: Icons.power_settings_new,
                 text: 'Sign out',

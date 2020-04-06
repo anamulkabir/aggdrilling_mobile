@@ -1,7 +1,6 @@
 import 'package:aggdrilling/models/project.dart';
 import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/models/worksheet.dart';
-import 'package:aggdrilling/models/worksheet_status.dart';
 import 'package:aggdrilling/pages/worksheet.dart';
 import 'package:aggdrilling/utils/common_functions.dart';
 import 'package:flutter/material.dart';
@@ -133,7 +132,6 @@ _selectedWorksheetUINavigator(WorkSheet workSheet,) async{
           shrinkWrap: true,
           itemCount: widget.mProject.worksheet.length,
           itemBuilder: (BuildContext context, int index) {
-//            WorkSheetStatus workSheetStatus;
             String statusDesc=CommonFunction.getStatusDesc(widget.mProject.worksheet[index].currentStatus);
             var statusColor=CommonFunction.getStatusByColor(widget.mProject.worksheet[index].currentStatus);
             if(widget.mProject.worksheet[index].status!=null &&
@@ -141,9 +139,6 @@ _selectedWorksheetUINavigator(WorkSheet workSheet,) async{
               widget.mProject.worksheet[index].status.sort((a, b) {
                 return b.entryDate.compareTo(a.entryDate);
               });
-//               workSheetStatus = widget.mProject.worksheet[index].status[0];
-//               statusDesc=CommonFunction.getStatusDesc(workSheetStatus.status);
-//               statusColor = CommonFunction.getStatusByColor(workSheetStatus.status);
             }
 
             return Card(

@@ -77,6 +77,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   bool addNewRemark = true;
   bool worksheetUpdate = false;
   bool hasPermitStatus = false;
+  bool hasSubmitStatus = false;
   int taskIndexForUpdate = -1;
   int usedMaterialIndexForUpdate = -1;
   final rigController = new TextEditingController();
@@ -95,8 +96,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   @override
   void initState() {
     super.initState();
-    _startTime ="6:00 AM";
-    _endTime = "6:00 AM";
+    _startTime ="7:00 AM";
+    _endTime = "7:00 AM";
     if(widget.mWorkSheet != null){
       _isLoading = true;
       loadWorksheetDetail();
@@ -225,8 +226,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         suggestions: widget.mProject.workers,
         itemBuilder: (context,suggestion) => new Padding(
           child: new ListTile(
-            title: new Text(suggestion.lastName +' '+ suggestion.firstName),
-            trailing: new Text(suggestion.designation),
+            title: new Text(suggestion.lastName +' '+ suggestion.firstName+'-'+suggestion.designation.substring(0,1).toUpperCase()),
           ),
           padding: EdgeInsets.all(8.0),
         ),
@@ -315,7 +315,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         _currentWorkSheetStatus = getCurrentStatus(widget.mWorkSheet.status);
       }
     _worksheetStages = getWorkSheetStagesFromList(widget.mProject.workSheetStages,_currentWorkSheetStatus);
+    if(_worksheetStages !=null){
     _nextStages.addAll(_worksheetStages.nextStages);
+    }
     ddlNextStages = new AutoCompleteTextField<String>(
       decoration: new InputDecoration(
           labelText: 'Submit To',
@@ -344,10 +346,22 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   }
   void checkPermitStatus(){
     PermitProjects permitProjects = widget.mUser.getUserPermitProjectByCode(widget.mProject.projectCode);
-    if(permitProjects != null && permitProjects.permitSteps.contains(_currentWorkSheetStatus.status)){
-      setState(() {
-        hasPermitStatus = true;
-      });
+    if(permitProjects != null && permitProjects.permitSteps!=null
+    && permitProjects.permitSteps.indexOf(_currentWorkSheetStatus.status)>=0 ){
+      for(WorkSheetStage workSheetStage in widget.mProject.workSheetStages){
+        if(workSheetStage.name.toLowerCase().contains(_currentWorkSheetStatus.status.toLowerCase())){
+          if(workSheetStage.actions.indexOf("add")>=0 ||
+              workSheetStage.actions.indexOf("update")>=0){
+            setState(() {
+              hasPermitStatus = true;
+            });
+          }
+          if(workSheetStage.actions.indexOf("submit")>=0){
+            hasSubmitStatus = true;
+          }
+
+        }
+      }
     }
   }
   WorkSheetStatus getCurrentStatus(List<WorkSheetStatus> status)
@@ -407,7 +421,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     return new DefaultTabController(
         length: choices.length,
         child: Scaffold(
-          resizeToAvoidBottomInset: false,
+//          resizeToAvoidBottomInset: false,
           appBar: new AppBar(
             title: Text(widget.mProject.projectName),
               actions: <Widget>[
@@ -664,7 +678,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               ]
           ),
         ),
-        loadLogTaskList(),
+        Expanded(
+         child: loadLogTaskList()
+          ),
       ],
     );
 
@@ -785,7 +801,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               ]
           ),
         ),
-        loadUsedMaterialList(),
+        Expanded(
+          child: loadUsedMaterialList(),
+        )
       ],
     );
   }
@@ -794,78 +812,81 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       return _showCircularProgress();
     }
     return Column(
-      children: <Widget>[
-        new Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            new Expanded(
-              flex: 5,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
-                child: new TextFormField(
-                  decoration: InputDecoration(
-                      labelText: 'Comments',
-                      hintText: 'Comments'
-                  ),
-                  keyboardType: TextInputType.multiline,
-                  maxLines: 3,
-                  maxLength: 200,
-                  controller: commentController,
-                ),
-
-              ),
-            ),
-          ],
-        ),
-        if(hasPermitStatus)
-        new Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            new Expanded(
-              flex: 4,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(10, 5, 0, 10),
-                child: ddlNextStages,
-              ),
-            ),
-            new Expanded(
-              flex: 3,
+        children: <Widget>[
+          new Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              new Expanded(
+                flex: 5,
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
-                  child: new FlatButton(
-                    child: Text('Submit'),
-                    color: Colors.blueAccent,
-                    textColor: Colors.white,
-                    onPressed: (){
-                      _submitConfirmation(context);
-                    },
+                  child: new TextFormField(
+                    decoration: InputDecoration(
+                        labelText: 'Comments',
+                        hintText: 'Comments'
+                    ),
+                    keyboardType: TextInputType.multiline,
+                    maxLines: 3,
+                    maxLength: 200,
+                    controller: commentController,
                   ),
-                )
-            ),
-          ],
-        ),
-        new Container(
-          color: Colors.grey,
-          padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
-          child: Row(
+
+                ),
+              ),
+            ],
+          ),
+          if(hasSubmitStatus)
+            new Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 new Expanded(
+                  flex: 4,
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(10, 5, 0, 10),
+                    child: ddlNextStages,
+                  ),
+                ),
+                new Expanded(
                     flex: 3,
-                    child:Padding(
-                      padding: EdgeInsetsDirectional.fromSTEB(10, 0, 0, 5),
-                      child: new Text("Comment",style: TextStyle(fontSize: 16.0),) ,
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
+                      child: new FlatButton(
+                        child: Text('Submit'),
+                        color: Colors.blueAccent,
+                        textColor: Colors.white,
+                        onPressed: (){
+                          _submitConfirmation(context);
+                        },
+                      ),
                     )
                 ),
-              ]
+              ],
+            ),
+          new Container(
+            color: Colors.grey,
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 0, 0),
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  new Expanded(
+                      flex: 3,
+                      child:Padding(
+                        padding: EdgeInsetsDirectional.fromSTEB(10, 0, 0, 5),
+                        child: new Text("Comment",style: TextStyle(fontSize: 16.0),) ,
+                      )
+                  ),
+                ]
+            ),
           ),
-        ),
-        loadCommentList(),
-      ],
+          Expanded(
+            child: loadCommentList(),
+          )
+        ],
     );
+
   }
   void setTaskLog(){
     if(isValidTask()){
@@ -905,7 +926,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         taskLog.coreSize = _selectedCoreSize;
 
         taskLog.entryDate = DateTime.now();
-        taskLog.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+        taskLog.entryBy = widget.mUser;
         if(startTime.compareTo(tempDayShiftStart)>=0 && startTime.compareTo(tempDayShiftEnd)<=0){
           taskLog.shift="D";
         }
@@ -930,8 +951,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   }
   void clearTaskInput(){
     _selectedTask = null;
-    _startTime ="6:00 AM";
-    _endTime = "6:00 AM";
+    _startTime ="7:00 AM";
+    _endTime = "7:00 AM";
     _startMeter = 0;
     _endMeter = 0;
     _selectedWorker = null;
@@ -986,7 +1007,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         consumeMaterials.material = _selectedMaterial;
         consumeMaterials.qty = double.parse(materialQtyController.text.isEmpty?"0":materialQtyController.text);
       }
-      consumeMaterials.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+      consumeMaterials.entryBy = widget.mUser;
       consumeMaterials.entryDate = DateTime.now();
       setState(() {
         addNewMaterial = true;
@@ -1226,11 +1247,14 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   {
     if(_isLoading)
       return _showCircularProgress();
+    _comments.sort((a,b){
+      return b.entryDate.compareTo(a.entryDate);
+    });
     if(_comments !=null && _comments.length>0)
     {
       return ListView.separated(
-        shrinkWrap: true,
-        separatorBuilder: (context, index) {
+          shrinkWrap: true,
+          separatorBuilder: (context, index) {
           return Divider();
         },
         itemCount: _comments.length,
@@ -1245,6 +1269,10 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   title: Text(_comments[index].comment),
                 ),
               ),
+              new Expanded(
+                  child:ListTile(
+                    title: Text(_comments[index].entryBy.lastName),
+                  )),
             ],
           );
         },
@@ -1299,7 +1327,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       {
         widget.mWorkSheet = new WorkSheet(null, null);
         widget.mWorkSheet.entryDate = DateTime.now();
-        widget.mWorkSheet.entryBy = widget.mUser.lastName;
+        widget.mWorkSheet.entryBy = widget.mUser;
       }
     widget.mWorkSheet.rigs = _selectedRigs;
     widget.mWorkSheet.holes = _selectedHoles;
@@ -1396,7 +1424,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     _selectedStatus = nextStagesController.text;
     _selectedComments = new Comments(commentController.text);
     _selectedComments.entryDate = DateTime.now();
-    _selectedComments.entryBy = widget.mUser.lastName+" "+widget.mUser.firstName;
+    _selectedComments.entryBy = widget.mUser;
     if(_selectedStatus!=null && _selectedStatus.isNotEmpty){
 
       _selectedWorkSheetStatus = new WorkSheetStatus(_selectedStatus);
