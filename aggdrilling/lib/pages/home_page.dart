@@ -60,6 +60,7 @@ class _HomePageState extends State<HomePage> {
 
      dbReference.collection('projects').where('projectCode',whereIn: _loginUser.getProjectCode() )
         .snapshots().listen((QuerySnapshot querySnapShot){
+          _projectList.clear();
           querySnapShot.documents.forEach((document) {
             _projectList.add(Project.fromSnapshot(document));
             setState(() {

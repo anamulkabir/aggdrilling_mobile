@@ -519,7 +519,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 child:  ddlTasks,
               ),
             ),
-            if(_selectedTask !=null && _selectedTask.taskType.contains('coring'))
+            if(_selectedTask !=null && _selectedTask.taskType.toLowerCase().contains('drilling'))
               new Expanded(
                 flex: 2,
                 child: Padding(
@@ -621,6 +621,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               ),
             if(hasPermitStatus)
             new Expanded(
+              flex: 1,
               child: Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 0),
                 child: IconButton(
@@ -687,7 +688,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   }
   Widget _createStartTimeDdl(List<String> values){
     return DropdownButton<String>(
-      hint: Text("Start Time"), // Not necessary for Option 1
+      hint: Text("Start Time"), // Not necessary for Option 1//
       value: _startTime,
       onChanged: (newValue) {
         setState(() {
@@ -696,7 +697,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       },
       items: values.map((data) {
         return DropdownMenuItem<String>(
-          child: new Text(data),
+          child: new Text(data, style: TextStyle(fontSize: 14.0),),
           value: data,
         );
       }).toList(),
@@ -713,7 +714,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       },
       items: values.map((data) {
         return DropdownMenuItem<String>(
-          child: new Text(data),
+          child: new Text(data, style: TextStyle(fontSize: 14.0)),
           value: data,
         );
       }).toList(),
@@ -1040,7 +1041,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _showDialog("Please Choose Material");
       return false;
     }
-    if(materialQtyController.text.isEmpty){
+    if(!CommonFunction.isNumeric(materialQtyController.text)){
         _showDialog("Please put quantity!");
         return false;
     }
@@ -1247,11 +1248,12 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   {
     if(_isLoading)
       return _showCircularProgress();
-    _comments.sort((a,b){
-      return b.entryDate.compareTo(a.entryDate);
-    });
+
     if(_comments !=null && _comments.length>0)
     {
+      _comments.sort((a,b){
+        return b.entryDate.compareTo(a.entryDate);
+      });
       return ListView.separated(
           shrinkWrap: true,
           separatorBuilder: (context, index) {
@@ -1428,7 +1430,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     if(_selectedStatus!=null && _selectedStatus.isNotEmpty){
 
       _selectedWorkSheetStatus = new WorkSheetStatus(_selectedStatus);
-      _selectedWorkSheetStatus.entryBy=widget.mUser.email;
+      _selectedWorkSheetStatus.entryBy=widget.mUser;
       _selectedWorkSheetStatus.entryDate = new DateTime.now();
     }
     saveWorkSheet();

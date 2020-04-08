@@ -13,7 +13,7 @@ class ConsumeMaterials{
   ConsumeMaterials(this.material,this.qty);
   ConsumeMaterials.fromDocumentSnapshot(DocumentSnapshot snapshot){
     this.material = MaterialItems.fromDs(snapshot.data["material"]);
-    this.qty = snapshot.data["qty"];
+    this.qty = double.parse(snapshot.data["qty"].toString());
     this.entryBy = User.fromDs(snapshot.data["entryBy"]);
     this.entryDate = formatDateTime.parse(snapshot.data["entryDate"]);
   }
