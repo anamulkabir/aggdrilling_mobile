@@ -132,7 +132,7 @@ _selectedWorksheetUINavigator(WorkSheet workSheet,) async{
           shrinkWrap: true,
           itemCount: widget.mProject.worksheet.length,
           itemBuilder: (BuildContext context, int index) {
-            String statusDesc=CommonFunction.getStatusDesc(widget.mProject.worksheet[index].currentStatus);
+            String statusDesc=widget.loginUser.appSettings.getStageDetails(widget.mProject.worksheet[index].currentStatus);
             var statusColor=CommonFunction.getStatusByColor(widget.mProject.worksheet[index].currentStatus);
             if(widget.mProject.worksheet[index].status!=null &&
                 widget.mProject.worksheet[index].status.length>0) {

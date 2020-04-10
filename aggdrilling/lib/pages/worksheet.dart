@@ -190,7 +190,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         setState(() {
           _selectedTask = item;
           taskController.text=_selectedTask.name;
-//          worksheetUpdate = true;
         });
       },
       key: keyTasks,
@@ -201,7 +200,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         child: new ListTile(
           title: new Text(suggestion.name),
         ),
-        padding: EdgeInsets.all(8.0),
+        padding: EdgeInsets.all(0.0),
       ),
       controller: taskController,
       itemSorter: (a, b) => a.name.compareTo(b.name),
@@ -326,7 +325,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       itemSubmitted: (item){
         setState(() {
           _selectedStatus = item;
-          nextStagesController.text = _selectedStatus;
+          nextStagesController.text = widget.mUser.appSettings.getStageDetails(_selectedStatus);
         });
       },
       onFocusChanged: (hasFocus){},
@@ -335,7 +334,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       suggestions: _nextStages,
       itemBuilder: (context,suggestion)=> new Padding(
           child: new ListTile(
-            title: new Text(suggestion),
+            title: new Text(widget.mUser.appSettings.getStageDetails(suggestion) ),
           ),
           padding: EdgeInsets.all(8.0)),
       controller: nextStagesController,
@@ -421,7 +420,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     return new DefaultTabController(
         length: choices.length,
         child: Scaffold(
-//          resizeToAvoidBottomInset: false,
           appBar: new AppBar(
             title: Text(widget.mProject.projectName),
               actions: <Widget>[
@@ -895,8 +893,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       if(_taskLogs == null){
         _taskLogs = new List();
       }
-      var tempDayShiftStart = timeFormat.parse("6:00 AM");
-      var tempDayShiftEnd = timeFormat.parse("7:00 PM");
+      var tempDayShiftStart = timeFormat.parse(widget.mUser.appSettings.dayShiftStart);
+      var tempDayShiftEnd = timeFormat.parse(widget.mUser.appSettings.dayShiftEnd);
       if(taskLogAddNew) {
         taskLog = new TaskLog(task: _selectedTask,
             startTime: _startTime,
@@ -972,9 +970,23 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _showDialog("Please choose Rigs");
       return false;
     }
+    else if(_selectedRigs.serial.toLowerCase()!=rigController.text.toLowerCase()){
+      _showDialog("Please choose Rigs");
+      return false;
+    }
     if(_workDate == null){
       _showDialog("Please put work date");
       return false;
+    }
+    if(holeController.text != null && holeController.text.isNotEmpty ){
+      if(_selectedHoles==null){
+        _showDialog("Please select valid holes");
+        return false;
+      }
+      else if(_selectedHoles.name.toLowerCase()!=holeController.text.toLowerCase()){
+        _showDialog("Please select valid holes");
+        return false;
+      }
     }
     return true;
   }
@@ -988,6 +1000,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       if(_selectedWorker == null){
         _showDialog("Please worker!");
             return false;
+      }
+    }
+
+    if(_selectedTask.logType.contains('P')){
+      _startMeter = double.parse(startMController.text.isEmpty?"0":startMController.text);
+      _endMeter = double.parse(endMController.text.isEmpty?"0":endMController.text);
+      if(_startMeter>_endMeter){
+        _showDialog("End meter can not be less than Start meter");
+        return false;
       }
     }
     return true;
@@ -1423,7 +1444,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     }
   }
   void submitWorkSheet(){
-    _selectedStatus = nextStagesController.text;
+
+   // _selectedStatus = nextStagesController.text;
     _selectedComments = new Comments(commentController.text);
     _selectedComments.entryDate = DateTime.now();
     _selectedComments.entryBy = widget.mUser;
@@ -1440,7 +1462,10 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _showDialog("Select Submit to ");
       return false;
     }
-
+    if(widget.mUser.appSettings.getStageDetails(_selectedStatus)!=nextStagesController.text){
+      _showDialog("Plesae select submit to");
+      return false;
+    }
     return showDialog(
       context: context,
       child: AlertDialog(

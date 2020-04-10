@@ -73,7 +73,7 @@ class TaskLog{
     'endMeter': this.endMeter,
     'shift': this.shift,
     'workHours': this.workHours,
-    'comment': ''+this.comment,
+    'comment': this.comment!=null?this.comment:"",
     'entryDate': formatDateTime.format(this.entryDate),
     'entryBy': this.entryBy.toJson(),
     'coreSize': this.coreSize!=null?this.coreSize.toJson():null,

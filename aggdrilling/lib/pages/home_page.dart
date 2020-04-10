@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> {
      _loginUser= User.fromSnapshot(ds);
      _loginUser.getAllPermits(ds, (value){
        if (_loginUser != null && _loginUser.permitProjects.length > 0) {
+         loadAppSettings();
          loadProject();
        }
        else {
@@ -54,6 +55,11 @@ class _HomePageState extends State<HomePage> {
 
     });
 
+  }
+  void loadAppSettings(){
+    dbReference.collection("appConfig").document("generalConfig").get().then((DocumentSnapshot snapshot){
+      _loginUser.setAppSettingsFromSnapshot(snapshot);
+    });
   }
 
   loadProject() async{
@@ -119,6 +125,14 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
                 contentPadding: const EdgeInsets.all(8.0),
+                onTap: (){
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProjectPage(loginUser:_loginUser ,mProject: _projectList[index]),
+                    ),
+                  );
+                },
               ),
             );
           });

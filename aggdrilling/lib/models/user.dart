@@ -1,3 +1,4 @@
+import 'package:aggdrilling/models/app_settings.dart';
 import 'package:aggdrilling/models/project.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 typedef void OnCompleteLoad(User user);
@@ -10,6 +11,7 @@ class User{
   String phone;
   String role;
   List<PermitProjects> permitProjects;
+  AppSettings appSettings;
   User.fromSnapshot(DocumentSnapshot snapshot)
   {
     this.firstName = snapshot.data["firstName"];
@@ -18,6 +20,7 @@ class User{
     this.phone = snapshot.data["phone"];
     this.role = snapshot.data["role"];
     this.permitProjects =  this.getAllPermitsFromDocumentSnapshot(snapshot);
+
   }
   User.fromDs(Map<dynamic, dynamic> ds){
     this.firstName = ds["firstName"];
@@ -25,6 +28,9 @@ class User{
     this.email = ds["email"];
     this.phone = ds["phone"];
     this.role = ds["role"];
+  }
+  void setAppSettingsFromSnapshot(DocumentSnapshot snapshot){
+    this.appSettings = AppSettings.fromDocumentSnapShot(snapshot);
   }
   Map<String, dynamic> toJson()=>{
     'firstName': this.firstName,
