@@ -56,7 +56,7 @@ class TaskLog{
       if(this.task.logType.contains("C")){
         this.comment = document.data["comment"];
       }
-      if(this.task.taskType.contains("coring")){
+      if(this.task.taskType.toLowerCase().contains('drilling')){
         this.coreSize = CoreSize.fromDS(document.data["coreSize"]);
       }
       this.entryBy = User.fromDs(document.data["entryBy"]);
