@@ -1,6 +1,5 @@
 import 'package:aggdrilling/models/comments.dart';
 import 'package:aggdrilling/models/coresize.dart';
-import 'package:aggdrilling/models/holes.dart';
 import 'package:aggdrilling/models/material.dart';
 import 'package:aggdrilling/models/project.dart';
 import 'package:aggdrilling/models/rigs.dart';
@@ -37,8 +36,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   final timeFormat = DateFormat("hh:mm a");
   final _dbReference = Firestore.instance.collection('projects');
   Rigs _selectedRigs;
-  Holes _selectedHoles;
+  String _selectedHoles;
+  String _dip;
   Worker _selectedWorker;
+  Worker _selectedDriller;
+  Worker _selectedHelper;
   Task _selectedTask;
   CoreSize _selectedCoreSize;
   MaterialItems _selectedMaterial;
@@ -56,14 +58,16 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   WorkSheetStatus _selectedWorkSheetStatus;
   String _selectedStatus;
   AutoCompleteTextField<Rigs> ddlRigs;
-  AutoCompleteTextField<Holes> ddlHoles;
+  AutoCompleteTextField<String> ddlHoles;
   AutoCompleteTextField<Task> ddlTasks;
   AutoCompleteTextField<CoreSize> ddlCoreSize;
   AutoCompleteTextField<Worker> ddlWorker;
+  AutoCompleteTextField<Worker> ddlDriller;
+  AutoCompleteTextField<Worker> ddlHelper;
   AutoCompleteTextField<MaterialItems> ddlMaterials;
   AutoCompleteTextField<String> ddlNextStages;
   GlobalKey keyRigs = new GlobalKey<AutoCompleteTextFieldState<Rigs>>();
-  GlobalKey keyHoles = new GlobalKey<AutoCompleteTextFieldState<Holes>>();
+  GlobalKey keyHoles = new GlobalKey<AutoCompleteTextFieldState<String>>();
   GlobalKey keyWorker = new GlobalKey<AutoCompleteTextFieldState<Worker>>();
   GlobalKey keyCoreSize = new GlobalKey<AutoCompleteTextFieldState<CoreSize>>();
   GlobalKey keyTasks = new GlobalKey<AutoCompleteTextFieldState<Task>>();
@@ -82,8 +86,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   int usedMaterialIndexForUpdate = -1;
   final rigController = new TextEditingController();
   final holeController = new TextEditingController();
+  final dipController = new TextEditingController();
   final taskController = new TextEditingController();
   final workerController = new TextEditingController();
+  final drillerController = new TextEditingController();
+  final helperController = new TextEditingController();
   final noteController = new TextEditingController();
   final startMController = new TextEditingController();
   final endMController = new TextEditingController();
@@ -153,7 +160,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         itemFilter: (suggestion,input) =>
             suggestion.serial.toLowerCase().startsWith(input.toLowerCase())
     );
-    ddlHoles = new AutoCompleteTextField<Holes>(
+    ddlHoles = new AutoCompleteTextField<String>(
         decoration: new InputDecoration(
           labelText: 'Holes',
           hintText: 'Select Holes',
@@ -161,7 +168,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         itemSubmitted: (item) {
           setState(() {
             _selectedHoles = item;
-            holeController.text=_selectedHoles.name;
+            holeController.text=_selectedHoles;
             worksheetUpdate = true;
           });
         },
@@ -171,15 +178,23 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         suggestions: widget.mProject.holes,
         itemBuilder: (context,suggestion) => new Padding(
           child: new ListTile(
-            title: new Text(suggestion.name,
+            title: new Text(suggestion,
             ),
           ),
           padding: EdgeInsets.all(8.0),
         ),
+        textChanged: (item){
+          setState(() {
+//            _selectedHoles = item;
+//            holeController.text=_selectedHoles;
+            worksheetUpdate = true;
+          });
+        },
+
         controller: holeController,
-        itemSorter: (a, b) => a.name.compareTo(b.name),
+        itemSorter: (a, b) => a.compareTo(b),
         itemFilter: (suggestion,input) =>
-            suggestion.name.toLowerCase().startsWith(input.toLowerCase())
+            suggestion.toLowerCase().startsWith(input.toLowerCase())
     );
     ddlTasks = new AutoCompleteTextField<Task>(
       decoration: new InputDecoration(
@@ -222,7 +237,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         key: keyWorker,
         clearOnSubmit: false,
         minLength: 0,
-        suggestions: widget.mProject.workers,
+        suggestions:filterWorkerByDesignation(widget.mProject.workers, "other") ,
         itemBuilder: (context,suggestion) => new Padding(
           child: new ListTile(
             title: new Text(suggestion.lastName +' '+ suggestion.firstName+'-'+suggestion.designation.substring(0,1).toUpperCase()),
@@ -230,6 +245,59 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           padding: EdgeInsets.all(8.0),
         ),
         controller: workerController,
+        itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
+        itemFilter: (suggestion,input) =>
+            suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
+    );
+
+    ddlDriller = new AutoCompleteTextField<Worker>(
+        decoration: new InputDecoration(
+          labelText: 'Driller',
+          hintText: 'Select Driller',
+        ),
+        itemSubmitted: (item) {
+          setState(() {
+             _selectedDriller= item;
+            drillerController.text=_selectedDriller.lastName+' '+_selectedDriller.firstName;
+//            worksheetUpdate = true;
+          });
+        },
+        clearOnSubmit: false,
+        minLength: 0,
+        suggestions: filterWorkerByDesignation(widget.mProject.workers, "driller"),
+        itemBuilder: (context,suggestion) => new Padding(
+          child: new ListTile(
+            title: new Text(suggestion.lastName +' '+ suggestion.firstName),
+          ),
+          padding: EdgeInsets.all(8.0),
+        ),
+        controller: drillerController,
+        itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
+        itemFilter: (suggestion,input) =>
+            suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
+    );
+    ddlHelper = new AutoCompleteTextField<Worker>(
+        decoration: new InputDecoration(
+          labelText: 'Helper',
+          hintText: 'Select Helper',
+        ),
+        itemSubmitted: (item) {
+          setState(() {
+             _selectedHelper= item;
+            helperController.text=_selectedHelper.lastName+' '+ _selectedHelper.firstName;
+//            worksheetUpdate = true;
+          });
+        },
+        clearOnSubmit: false,
+        minLength: 0,
+        suggestions: filterWorkerByDesignation(widget.mProject.workers, "helper") ,
+        itemBuilder: (context,suggestion) => new Padding(
+          child: new ListTile(
+            title: new Text(suggestion.lastName +' '+ suggestion.firstName),
+          ),
+          padding: EdgeInsets.all(8.0),
+        ),
+        controller: helperController,
         itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
         itemFilter: (suggestion,input) =>
             suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
@@ -294,13 +362,23 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     loadProjectPermitStatus();
     checkPermitStatus();
   }
-
+  List<Worker> filterWorkerByDesignation(List<Worker> workers,String filter){
+    List<Worker> workerRs = new List();
+    for(Worker worker in workers){
+      if(worker.designation.toLowerCase().contains(filter)){
+        workerRs.add(worker);
+      }
+    }
+    return workerRs;
+  }
   void loadWorkSheet(WorkSheet workSheet){
       _workDate.dateTime = workSheet.workDate;
       _selectedRigs = workSheet.rigs;
       rigController.text = _selectedRigs.serial;
       _selectedHoles = workSheet.holes;
-      holeController.text = _selectedHoles!=null?_selectedHoles.name:'';
+      _dip = workSheet.dip;
+      holeController.text = _selectedHoles!=null?_selectedHoles:'';
+      dipController.text = _dip !=null?_dip:'';
       _taskLogs = workSheet.taskLogs;
       _consumeMaterials = workSheet.consumeMaterials;
       _comments = workSheet.comments;
@@ -475,6 +553,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             new Expanded(
+              flex: 2,
               child: Padding(
               padding: EdgeInsetsDirectional.fromSTEB(10, 5, 5, 0),
                 child: new TextFormField(
@@ -492,17 +571,50 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               ),
             ),
             new Expanded(
+              flex: 2,
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(5, 5, 5, 0),
                   child:  ddlRigs,
                   ),
             ),
             new Expanded(
+              flex: 2,
               child: Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(5, 5, 5, 0),
                 child:  ddlHoles,
               ),
             ),
+            new Expanded(
+              flex: 1,
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(5, 5, 5, 0),
+                child: new TextFormField(
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(5),
+                    BlacklistingTextInputFormatter.singleLineFormatter,
+                    ValidatorInputFormatter(
+                      editingValidator: DecimalNumberSubmitValidator(
+                      ),
+                    )
+                  ],
+                  decoration: const InputDecoration(
+                    hintText: 'DIP',
+                    labelText: 'DIP',
+                  ),
+                  controller:  dipController,
+                  textAlign: TextAlign.center,
+                  onChanged: (value){
+                    _dip=value;
+                    setState(() {
+
+                      worksheetUpdate = true;
+                    });
+                  },
+                ),
+              ),
+            )
+
           ],
 
         ),
@@ -552,6 +664,27 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   ),
                 ),
               ),
+
+          ],
+
+        ),
+        if(_selectedTask!=null && _selectedTask.logType.contains('X'))
+        new Row(
+          mainAxisAlignment: MainAxisAlignment.start, //change here don't //worked
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+              new Expanded(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
+                  child:  ddlDriller,
+                ),
+              ),
+            new Expanded(
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
+                child:  ddlHelper,
+              ),
+            )
 
           ],
 
@@ -913,6 +1046,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         taskLog.startMeter = double.parse(startMController.text.isEmpty?"0":startMController.text);
         taskLog.endMeter = double.parse(endMController.text.isEmpty?"0":endMController.text);
         taskLog.worker = _selectedWorker;
+        taskLog.driller = _selectedDriller;
+        taskLog.helper = _selectedHelper;
         var startTime = timeFormat.parse(taskLog.startTime);
         var endTime = timeFormat.parse(taskLog.endTime);
         if(startTime.isAfter(endTime))
@@ -979,14 +1114,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       return false;
     }
     if(holeController.text != null && holeController.text.isNotEmpty ){
-      if(_selectedHoles==null){
-        _showDialog("Please select valid holes");
-        return false;
-      }
-      else if(_selectedHoles.name.toLowerCase()!=holeController.text.toLowerCase()){
-        _showDialog("Please select valid holes");
-        return false;
-      }
+
+//      if(_selectedHoles==null){
+//        _showDialog("Please select valid holes");
+//        return false;
+//      }
+//      if(_selectedHoles.toLowerCase()!=holeController.text.toLowerCase()){
+//        _showDialog("Please select valid holes");
+//        return false;
+//      }
     }
     return true;
   }
@@ -1108,15 +1244,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
 
     });
   }
-//  void callTimePicker(TimeWrapper time) async {
-//    TimeOfDay tod = await getTime();
-//    setState(() {
-//      if(tod !=null){
-//        time.timeOfDay = tod;
-//      }
-//
-//    });
-//  }
+
   Widget loadLogTaskList()
   {
     if(_isLoading)
@@ -1138,7 +1266,14 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             var duration = (hoursWorked.inMinutes/60).toStringAsFixed(2);
             _startMeter = _taskLogs[index].startMeter;
             _endMeter = _taskLogs[index].endMeter;
-
+            String displayWorker ="";
+            if(_taskLogs[index].task.logType.contains("X")){
+              displayWorker = _taskLogs[index].driller !=null?(_taskLogs[index].driller.lastName+' '+ _taskLogs[index].driller.firstName+'(D)\n'):'';
+              displayWorker+= _taskLogs[index].helper !=null?(_taskLogs[index].helper.lastName+' '+ _taskLogs[index].helper.firstName+'(H)'):'';
+            }
+            else if(_taskLogs[index].task.logType.contains("E")){
+              displayWorker = _taskLogs[index].worker !=null?(_taskLogs[index].worker.lastName+' '+ _taskLogs[index].worker.firstName):'';
+            }
             String displayProgress;
             double workDoneProgress=0;
             if(_endTime !=null && _startMeter !=null){
@@ -1159,7 +1294,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 new Expanded(
                   flex:2,
                   child:ListTile(
-                    title: Text(_taskLogs[index].worker!=null?_taskLogs[index].worker.lastName+' '+_taskLogs[index].worker.firstName:''),
+                    title: Text(displayWorker),
                   ),
                 ),
                 new Expanded(
@@ -1321,7 +1456,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         _selectedCoreSize =_taskLogs[index].coreSize;
         coreSizeController.text =_selectedCoreSize!=null?_selectedCoreSize.core:'';
         _selectedWorker =_taskLogs[index].worker;
-        workerController.text=_selectedWorker!=null? _selectedWorker.lastName:'';
+        workerController.text=_selectedWorker!=null? _selectedWorker.lastName+' '+ _selectedWorker.firstName:'';
+        _selectedDriller = _taskLogs[index].driller;
+        drillerController.text=_selectedDriller !=null? _selectedDriller.lastName+' '+_selectedDriller.firstName:'';
+        _selectedHelper = _taskLogs[index].helper;
+        helperController.text = _selectedHelper!=null?_selectedHelper.lastName +' '+_selectedHelper.firstName:'';
         _startTime = _taskLogs[index].startTime;
         _endTime = _taskLogs[index].endTime;
         _startMeter =_taskLogs[index].startMeter;
@@ -1343,6 +1482,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     }
   }
   void saveWorkSheet(){
+    _selectedHoles = holeController.text;
     if(!isValidWorkSheet()) {
       return;
     }
@@ -1353,6 +1493,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         widget.mWorkSheet.entryBy = widget.mUser;
       }
     widget.mWorkSheet.rigs = _selectedRigs;
+    widget.mWorkSheet.dip = dipController.text;
     widget.mWorkSheet.holes = _selectedHoles;
     widget.mWorkSheet.workDate = _workDate.dateTime;
     widget.mWorkSheet.taskLogs = _taskLogs;

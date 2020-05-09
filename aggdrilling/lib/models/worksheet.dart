@@ -16,7 +16,8 @@ class WorkSheet{
   DateTime workDate;
   DateTime entryDate;
   User entryBy;
-  Holes holes;
+  String holes;
+  String dip;
   Rigs rigs;
   List<TaskLog> taskLogs;
   List<Comments> comments;
@@ -38,7 +39,8 @@ class WorkSheet{
         this.currentStatus = snapshot.data["currentStatus"];
         this.workDate = DateTime.parse(snapshot.data["workDate"]);
         this.rigs = Rigs.fromDs(snapshot.data["rigs"]);
-        this.holes = Holes.fromDs(snapshot.data["holes"]);
+        this.holes = snapshot.data["holes"];
+        this.dip = snapshot.data["dip"];
         this.entryDate = formatDateTime.parse(snapshot.data["entryDate"]);
         this.entryBy = User.fromDs(snapshot.data["entryBy"]);
       }catch(error){
@@ -112,7 +114,8 @@ class WorkSheet{
         'workDate':formatDate.format(this.workDate),
         'entryDate':formatDateTime.format(this.entryDate),
         'entryBy': this.entryBy.toJson(),
-        'holes': this.holes !=null?this.holes.toJson():null,
+        'holes': this.holes !=null?this.holes:null,
+        'dip': this.dip,
         'rigs': this.rigs !=null?this.rigs.toJson():null,
         'currentStatus': this.currentStatus,
       };

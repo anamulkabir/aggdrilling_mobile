@@ -3,7 +3,6 @@ import 'package:aggdrilling/models/geologist.dart';
 import 'package:aggdrilling/models/material.dart';
 import 'package:aggdrilling/models/task.dart';
 import 'package:aggdrilling/models/rigs.dart';
-import 'package:aggdrilling/models/holes.dart';
 import 'package:aggdrilling/models/user.dart';
 import 'package:aggdrilling/models/worker.dart';
 import 'package:aggdrilling/models/worksheet.dart';
@@ -25,7 +24,7 @@ class Project{
   List<CoreSize> coreSizes;
   List<Rigs> rigs;
   List<Geologist> geologists;
-  List<Holes> holes;
+  List<String> holes;
   List<Task> tasks;
   List<MaterialItems> materials;
   List<Worker> workers;
@@ -118,10 +117,15 @@ class Project{
     }
     else if(value == data_to_load.HOLES){
       queue.removeFirst();
+//      snapshot.reference.collection("holes").document("holes").get().then((DocumentSnapshot snapshot){
+//        this.holes = new List();
+//        this.holes.addAll(List.from(snapshot.data["holes"]));
+//        _getAllProjectCollection(snapshot);
+//      });
       snapshot.reference.collection("holes").getDocuments().then((QuerySnapshot querySnapShot){
         this.holes = new List();
         for(DocumentSnapshot document in querySnapShot.documents){
-          this.holes.add(Holes.fromDocumentSnapShot(document));
+          this.holes.addAll(List.from(document.data["holes"]));
         }
         _getAllProjectCollection(snapshot);
       });
@@ -177,6 +181,7 @@ class Project{
       });
     }
   }
+
 }
 enum data_to_load{
   MATERIALS,

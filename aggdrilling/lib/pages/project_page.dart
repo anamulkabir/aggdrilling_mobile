@@ -155,7 +155,7 @@ _selectedWorksheetUINavigator(WorkSheet workSheet,) async{
                         TextSpan(text:" "+ widget.mProject.worksheet[index].rigs.serial,),
                         TextSpan(text: widget.mProject.worksheet[index].holes !=null?" H:":"",
                             style: TextStyle(fontSize:15.0,color: Colors.indigo )),
-                        TextSpan(text: widget.mProject.worksheet[index].holes !=null?widget.mProject.worksheet[index].holes.name:"",),
+                        TextSpan(text: widget.mProject.worksheet[index].holes !=null?widget.mProject.worksheet[index].holes:"",),
                       ]
                     ,
                   ),

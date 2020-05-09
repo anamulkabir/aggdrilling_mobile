@@ -18,6 +18,8 @@ class TaskLog{
   DateTime entryDate;
   User entryBy;
   Worker worker;
+  Worker driller;
+  Worker helper;
   CoreSize coreSize;
   final formatDate = DateFormat("yyyy-MM-dd");
   final formatDateTime = DateFormat("yyyy-MM-dd hh:mm:ss a");
@@ -26,8 +28,12 @@ class TaskLog{
     this.task = ds["taskName"];// find the task from the meta data
     if(this.task.logType.contains("E"))
       {
-        this.worker = Worker.fromDs(ds);
+        this.worker = Worker.fromDs(ds["worker"]);
       }
+    if(this.task.logType.contains("X")){
+      this.driller = Worker.fromDs(ds["driller"]);
+      this.helper = Worker.fromDs(ds["helper"]);
+    }
     this.shift = ds["shift"];
     this.workHours = ds["hoursWork"];
     if(this.task.logType.contains("P")){
@@ -44,6 +50,10 @@ class TaskLog{
       if(this.task.logType.contains("E"))
       {
         this.worker = Worker.fromDs(document.data["worker"]);
+      }
+      if(this.task.logType.contains("X")){
+        this.driller = Worker.fromDs(document.data["driller"]);
+        this.helper = Worker.fromDs(document.data["helper"]);
       }
       this.startTime = document.data["startTime"];
       this.endTime = document.data["endTime"];
@@ -78,6 +88,8 @@ class TaskLog{
     'entryBy': this.entryBy.toJson(),
     'coreSize': this.coreSize!=null?this.coreSize.toJson():null,
     'worker': this.worker !=null?this.worker.toJson():null,
+    'driller':this.driller != null? this.driller.toJson():null,
+    'helper':this.helper != null? this.helper.toJson():null,
   };
 
 }
