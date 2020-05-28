@@ -40,7 +40,7 @@ class WorkSheet{
         this.workDate = DateTime.parse(snapshot.data["workDate"]);
         this.rigs = Rigs.fromDs(snapshot.data["rigs"]);
         this.holes = snapshot.data["holes"];
-        this.dip = snapshot.data["dip"];
+        this.dip = snapshot.data["dip"].toString();
         this.entryDate = formatDateTime.parse(snapshot.data["entryDate"]);
         this.entryBy = User.fromDs(snapshot.data["entryBy"]);
       }catch(error){

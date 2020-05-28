@@ -17,7 +17,8 @@ class TaskLog{
   String comment;
   DateTime entryDate;
   User entryBy;
-  Worker worker;
+  Worker worker1;
+  Worker worker2;
   Worker driller;
   Worker helper;
   CoreSize coreSize;
@@ -28,7 +29,8 @@ class TaskLog{
     this.task = ds["taskName"];// find the task from the meta data
     if(this.task.logType.contains("E"))
       {
-        this.worker = Worker.fromDs(ds["worker"]);
+        this.worker1 = Worker.fromDs(ds["worker1"]);
+        this.worker2 = Worker.fromDs(ds["worker2"]);
       }
     if(this.task.logType.contains("X")){
       this.driller = Worker.fromDs(ds["driller"]);
@@ -49,24 +51,23 @@ class TaskLog{
       this.task = Task.fromDs(document.data["task"]);// find the task from the meta data
       if(this.task.logType.contains("E"))
       {
-        this.worker = Worker.fromDs(document.data["worker"]);
+        this.worker1 = document.data["worker1"]!=null?Worker.fromDs(document.data["worker1"]):null;
+        this.worker2 = document.data["worker2"]!=null?Worker.fromDs(document.data["worker2"]):null;
       }
       if(this.task.logType.contains("X")){
-        this.driller = Worker.fromDs(document.data["driller"]);
-        this.helper = Worker.fromDs(document.data["helper"]);
+        this.driller = document.data["driller"]!=null?Worker.fromDs(document.data["driller"]):null;
+        this.helper = document.data["helper"]!=null?Worker.fromDs(document.data["helper"]):null;
       }
       this.startTime = document.data["startTime"];
       this.endTime = document.data["endTime"];
       this.shift = document.data["shift"];
       this.workHours = document.data["hoursWork"];
       if(this.task.logType.contains("P")){
-        this.startMeter = document.data["startMeter"];
-        this.endMeter = document.data["endMeter"];
+        this.startMeter = double.parse(document.data["startMeter"].toString());
+        this.endMeter = double.tryParse(document.data["endMeter"].toString());
       }
-      if(this.task.logType.contains("C")){
-        this.comment = document.data["comment"];
-      }
-      if(this.task.taskType.toLowerCase().contains('drilling')){
+      this.comment = document.data["comment"];
+      if(this.task.taskType.toLowerCase().contains('drilling') && document.data["coreSize"]!=null){
         this.coreSize = CoreSize.fromDS(document.data["coreSize"]);
       }
       this.entryBy = User.fromDs(document.data["entryBy"]);
@@ -87,7 +88,8 @@ class TaskLog{
     'entryDate': formatDateTime.format(this.entryDate),
     'entryBy': this.entryBy.toJson(),
     'coreSize': this.coreSize!=null?this.coreSize.toJson():null,
-    'worker': this.worker !=null?this.worker.toJson():null,
+    'worker1': this.worker1 !=null?this.worker1.toJson():null,
+    'worker2': this.worker2 !=null?this.worker2.toJson():null,
     'driller':this.driller != null? this.driller.toJson():null,
     'helper':this.helper != null? this.helper.toJson():null,
   };

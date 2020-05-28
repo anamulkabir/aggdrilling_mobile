@@ -17,11 +17,12 @@ class Worker{
   }
   Worker.fromDs(Map<dynamic,dynamic> worker)
   {
-    this.firstName  = worker["firstName"];
-    this.middleName  = worker["middleName"];
-    this.lastName  = worker["lastName"];
-    this.type  = worker["type"];
-    this.designation = worker["designation"];
+      this.firstName = worker["firstName"];
+      this.middleName = worker["middleName"];
+      this.lastName = worker["lastName"];
+      this.type = worker["type"];
+      this.designation = worker["designation"];
+
   }
   static List<Worker> fromDsList(List<dynamic> workers){
     List<Worker> workerList = workers.map((entry) => Worker.fromDs(entry)).toList();

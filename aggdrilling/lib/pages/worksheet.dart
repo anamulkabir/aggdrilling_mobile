@@ -29,7 +29,7 @@ class WorkSheetPage extends StatefulWidget{
     return new _WorkSheetPageState();
   }
 }
-class _WorkSheetPageState extends State<WorkSheetPage>{
+class _WorkSheetPageState extends State<WorkSheetPage> with WidgetsBindingObserver{
   bool _isLoading;
   final format = DateFormat("yyyy-MM-dd");
   final formatDateTime = DateFormat("yyyy-MM-dd hh:mm a");
@@ -38,7 +38,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   Rigs _selectedRigs;
   String _selectedHoles;
   String _dip;
-  Worker _selectedWorker;
+  Worker _selectedWorker1;
+  Worker _selectedWorker2;
   Worker _selectedDriller;
   Worker _selectedHelper;
   Task _selectedTask;
@@ -57,21 +58,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   WorkSheetStatus _currentWorkSheetStatus;
   WorkSheetStatus _selectedWorkSheetStatus;
   String _selectedStatus;
-  AutoCompleteTextField<Rigs> ddlRigs;
   AutoCompleteTextField<String> ddlHoles;
-  AutoCompleteTextField<Task> ddlTasks;
-  AutoCompleteTextField<CoreSize> ddlCoreSize;
-  AutoCompleteTextField<Worker> ddlWorker;
-  AutoCompleteTextField<Worker> ddlDriller;
-  AutoCompleteTextField<Worker> ddlHelper;
-  AutoCompleteTextField<MaterialItems> ddlMaterials;
   AutoCompleteTextField<String> ddlNextStages;
-  GlobalKey keyRigs = new GlobalKey<AutoCompleteTextFieldState<Rigs>>();
-  GlobalKey keyHoles = new GlobalKey<AutoCompleteTextFieldState<String>>();
-  GlobalKey keyWorker = new GlobalKey<AutoCompleteTextFieldState<Worker>>();
-  GlobalKey keyCoreSize = new GlobalKey<AutoCompleteTextFieldState<CoreSize>>();
-  GlobalKey keyTasks = new GlobalKey<AutoCompleteTextFieldState<Task>>();
-  GlobalKey keyMaterialItems = new GlobalKey<AutoCompleteTextFieldState<MaterialItems>>();
   GlobalKey keyNextStages = new GlobalKey<AutoCompleteTextFieldState<String>>();
   final DateTimeWrapper _workDate = new DateTimeWrapper(dateTime:DateTime.now());
   String _startTime;
@@ -84,25 +72,19 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   bool hasSubmitStatus = false;
   int taskIndexForUpdate = -1;
   int usedMaterialIndexForUpdate = -1;
-  final rigController = new TextEditingController();
-  final holeController = new TextEditingController();
   final dipController = new TextEditingController();
-  final taskController = new TextEditingController();
-  final workerController = new TextEditingController();
-  final drillerController = new TextEditingController();
-  final helperController = new TextEditingController();
   final noteController = new TextEditingController();
   final startMController = new TextEditingController();
   final endMController = new TextEditingController();
-  final coreSizeController = new TextEditingController();
-  final materialItemController = new TextEditingController();
   final materialQtyController = new TextEditingController();
   final commentController = new TextEditingController();
   final nextStagesController = new TextEditingController();
+  final holeController = new TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startTime ="7:00 AM";
     _endTime = "7:00 AM";
     if(widget.mWorkSheet != null){
@@ -113,6 +95,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       loadUI();
       _isLoading = false;
     }
+
+  }
+  @override
+  void dispose(){
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+  @override
+  void didChangeMetrics(){
 
   }
   loadWorksheetDetail() async{
@@ -132,229 +123,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     });
   }
   loadUI(){
-    ddlRigs = new AutoCompleteTextField<Rigs>(
-        decoration: new InputDecoration(
-          labelText: 'Rigs',
-          hintText: 'Select Rigs',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-            _selectedRigs = item;
-            rigController.text=_selectedRigs.serial;
-            worksheetUpdate = true;
-          });
-        },
-        key: keyRigs,
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: widget.mProject.rigs,
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.serial,
-            ),
-          ),
-          padding: EdgeInsets.all(8.0),
-        ),
-        controller: rigController,
-        itemSorter: (a, b) => a.serial.compareTo(b.serial),
-        itemFilter: (suggestion,input) =>
-            suggestion.serial.toLowerCase().startsWith(input.toLowerCase())
-    );
-    ddlHoles = new AutoCompleteTextField<String>(
-        decoration: new InputDecoration(
-          labelText: 'Holes',
-          hintText: 'Select Holes',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-            _selectedHoles = item;
-            holeController.text=_selectedHoles;
-            worksheetUpdate = true;
-          });
-        },
-        key: keyHoles,
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: widget.mProject.holes,
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion,
-            ),
-          ),
-          padding: EdgeInsets.all(8.0),
-        ),
-        textChanged: (item){
-          setState(() {
-//            _selectedHoles = item;
-//            holeController.text=_selectedHoles;
-            worksheetUpdate = true;
-          });
-        },
-
-        controller: holeController,
-        itemSorter: (a, b) => a.compareTo(b),
-        itemFilter: (suggestion,input) =>
-            suggestion.toLowerCase().startsWith(input.toLowerCase())
-    );
-    ddlTasks = new AutoCompleteTextField<Task>(
-      decoration: new InputDecoration(
-        labelText: 'Tasks',
-        hintText: 'Select Task',
-      ),
-      itemSubmitted: (item) {
-        setState(() {
-          _selectedTask = item;
-          taskController.text=_selectedTask.name;
-        });
-      },
-      key: keyTasks,
-      clearOnSubmit: false,
-      minLength: 0,
-      suggestions: widget.mProject.tasks,
-      itemBuilder: (context,suggestion) => new Padding(
-        child: new ListTile(
-          title: new Text(suggestion.name),
-        ),
-        padding: EdgeInsets.all(0.0),
-      ),
-      controller: taskController,
-      itemSorter: (a, b) => a.name.compareTo(b.name),
-      itemFilter: (suggestion,input) =>
-          suggestion.name.toLowerCase().startsWith(input.toLowerCase()),
-    );
-    ddlWorker = new AutoCompleteTextField<Worker>(
-        decoration: new InputDecoration(
-          labelText: 'Worker',
-          hintText: 'Select Employee',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-            _selectedWorker = item;
-            workerController.text=_selectedWorker.lastName+' '+_selectedWorker.firstName;
-//            worksheetUpdate = true;
-          });
-        },
-        key: keyWorker,
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions:filterWorkerByDesignation(widget.mProject.workers, "other") ,
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.lastName +' '+ suggestion.firstName+'-'+suggestion.designation.substring(0,1).toUpperCase()),
-          ),
-          padding: EdgeInsets.all(8.0),
-        ),
-        controller: workerController,
-        itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
-        itemFilter: (suggestion,input) =>
-            suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
-    );
-
-    ddlDriller = new AutoCompleteTextField<Worker>(
-        decoration: new InputDecoration(
-          labelText: 'Driller',
-          hintText: 'Select Driller',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-             _selectedDriller= item;
-            drillerController.text=_selectedDriller.lastName+' '+_selectedDriller.firstName;
-//            worksheetUpdate = true;
-          });
-        },
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: filterWorkerByDesignation(widget.mProject.workers, "driller"),
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.lastName +' '+ suggestion.firstName),
-          ),
-          padding: EdgeInsets.all(8.0),
-        ),
-        controller: drillerController,
-        itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
-        itemFilter: (suggestion,input) =>
-            suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
-    );
-    ddlHelper = new AutoCompleteTextField<Worker>(
-        decoration: new InputDecoration(
-          labelText: 'Helper',
-          hintText: 'Select Helper',
-        ),
-        itemSubmitted: (item) {
-          setState(() {
-             _selectedHelper= item;
-            helperController.text=_selectedHelper.lastName+' '+ _selectedHelper.firstName;
-//            worksheetUpdate = true;
-          });
-        },
-        clearOnSubmit: false,
-        minLength: 0,
-        suggestions: filterWorkerByDesignation(widget.mProject.workers, "helper") ,
-        itemBuilder: (context,suggestion) => new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.lastName +' '+ suggestion.firstName),
-          ),
-          padding: EdgeInsets.all(8.0),
-        ),
-        controller: helperController,
-        itemSorter: (a, b) => a.lastName.compareTo(b.lastName),
-        itemFilter: (suggestion,input) =>
-            suggestion.lastName.toLowerCase().startsWith(input.toLowerCase())
-    );
-    ddlCoreSize = new AutoCompleteTextField<CoreSize>(
-      decoration: new InputDecoration(
-        labelText: 'CoreSize',
-        hintText: 'Select CoreSize',
-      ),
-      itemSubmitted: (item) {
-        setState(() {
-          _selectedCoreSize = item;
-          coreSizeController.text=_selectedCoreSize.core;
-//          worksheetUpdate = true;
-        });
-      },
-      key: keyCoreSize,
-      clearOnSubmit: false,
-      minLength: 0,
-      suggestions: widget.mProject.coreSizes,
-      itemBuilder: (context,suggestion) => new Padding(
-        child: new ListTile(
-          title: new Text(suggestion.core,
-          ),
-        ),
-        padding: EdgeInsets.all(8.0),
-      ),
-      controller: coreSizeController,
-      itemSorter: (a, b) => a.core.compareTo(b.core),
-      itemFilter: (suggestion,input) =>
-          suggestion.core.toLowerCase().startsWith(input.toLowerCase()),
-    );
-    ddlMaterials = new AutoCompleteTextField<MaterialItems>(
-      decoration: new InputDecoration(
-          labelText: 'Used Material',
-          hintText: 'Select Used materials'
-      ),
-      itemSubmitted: (item){
-        setState(() {
-          _selectedMaterial = item;
-          materialItemController.text = _selectedMaterial.name;
-        });
-      },
-      key: keyMaterialItems,
-      clearOnSubmit: false,
-      minLength: 0,
-      suggestions: widget.mProject.materials,
-      itemBuilder: (context,suggestion)=> new Padding(
-          child: new ListTile(
-            title: new Text(suggestion.name),
-          ),
-          padding: EdgeInsets.all(8.0)),
-      controller: materialItemController,
-      itemSorter: (a, b)=>a.name.compareTo(b.name),
-      itemFilter: (suggestion, input) =>
-          suggestion.name.toLowerCase().startsWith(input.toLowerCase()),
-    );
     _isLoading = false;
     if(widget.mWorkSheet !=null) {
       loadWorkSheet(widget.mWorkSheet);
@@ -374,10 +142,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
   void loadWorkSheet(WorkSheet workSheet){
       _workDate.dateTime = workSheet.workDate;
       _selectedRigs = workSheet.rigs;
-      rigController.text = _selectedRigs.serial;
       _selectedHoles = workSheet.holes;
       _dip = workSheet.dip;
-      holeController.text = _selectedHoles!=null?_selectedHoles:'';
+      holeController.text=_selectedHoles;
       dipController.text = _dip !=null?_dip:'';
       _taskLogs = workSheet.taskLogs;
       _consumeMaterials = workSheet.consumeMaterials;
@@ -395,6 +162,37 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     if(_worksheetStages !=null){
     _nextStages.addAll(_worksheetStages.nextStages);
     }
+    ddlHoles = new AutoCompleteTextField<String>(
+      decoration: new InputDecoration(
+          labelText: 'Holes',
+      ),
+      itemSubmitted: (item){
+        setState(() {
+          _selectedHoles = item;
+          holeController.text = _selectedHoles;
+          worksheetUpdate = true;
+        });
+      },
+      onFocusChanged: (hasFocus){},
+      clearOnSubmit: false,
+      minLength: 0,
+      suggestions: widget.mProject.holes,
+      textChanged: (value){
+        _selectedHoles=value;
+        setState(() {
+          worksheetUpdate = true;
+        });
+      },
+      itemBuilder: (context,suggestion)=> new Padding(
+          child: new ListTile(
+            title: new Text(suggestion ),
+          ),
+          padding: EdgeInsets.all(8.0)),
+      controller: holeController,
+      itemSorter: (a, b)=>a.compareTo(b),
+      itemFilter: (suggestion, input) =>
+          suggestion.toLowerCase().startsWith(input.toLowerCase()),
+    );
     ddlNextStages = new AutoCompleteTextField<String>(
       decoration: new InputDecoration(
           labelText: 'Submit To',
@@ -504,7 +302,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 if(hasPermitStatus && worksheetUpdate)
                   new Padding(
                     padding: EdgeInsetsDirectional.fromSTEB(0, 0, 20, 0),
-                    child: IconButton(icon: Icon(Icons.done),
+                    child: FlatButton(child: Text('Save',style: TextStyle(fontSize: 18.0,color: Colors.white),),
                         onPressed: saveWorkSheet),
                   ),
 
@@ -573,8 +371,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             new Expanded(
               flex: 2,
                 child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(5, 5, 5, 0),
-                  child:  ddlRigs,
+                  padding: EdgeInsetsDirectional.fromSTEB(0, 25, 0, 5),
+                  child:  _createRigsDdl(widget.mProject.rigs),
                   ),
             ),
             new Expanded(
@@ -587,7 +385,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             new Expanded(
               flex: 1,
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(5, 5, 5, 0),
+                padding: EdgeInsetsDirectional.fromSTEB(5, 15, 5, 0),
                 child: new TextFormField(
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
@@ -600,14 +398,12 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   ],
                   decoration: const InputDecoration(
                     hintText: 'DIP',
-                    labelText: 'DIP',
                   ),
                   controller:  dipController,
                   textAlign: TextAlign.center,
                   onChanged: (value){
                     _dip=value;
                     setState(() {
-
                       worksheetUpdate = true;
                     });
                   },
@@ -626,7 +422,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               flex: 3,
               child: Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                child:  ddlTasks,
+                child:  _createTaskDdl(widget.mProject.tasks),
               ),
             ),
             if(_selectedTask !=null && _selectedTask.taskType.toLowerCase().contains('drilling'))
@@ -634,34 +430,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 flex: 2,
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                  child:  ddlCoreSize,
-                ),
-              ),
-            if(_selectedTask!=null && _selectedTask.logType.contains('E'))
-              new Expanded(
-              flex: 3,
-              child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-              child:  ddlWorker,
-              ),
-              ),
-            if(_selectedTask!=null && _selectedTask.logType.contains('C'))
-              new Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                  child:  new TextFormField(
-                    decoration: const InputDecoration(
-                      hintText: 'Note',
-                      labelText: 'Note'
-                    ),
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(50),
-                    ],
-
-                    controller: noteController,
-
-                  ),
+                  child:  _createCoreDdl(widget.mProject.coreSizes),
                 ),
               ),
 
@@ -676,30 +445,57 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               new Expanded(
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                  child:  ddlDriller,
+                  child:  _createDrillerDdl(filterWorkerByDesignation(widget.mProject.workers,"driller")),
                 ),
               ),
             new Expanded(
               child: Padding(
                 padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
-                child:  ddlHelper,
+                child:  _createHelperDdl(filterWorkerByDesignation(widget.mProject.workers, "helper")),
               ),
             )
 
           ],
 
         ),
+        if(_selectedTask!=null && _selectedTask.logType.contains('E'))
+        new Row(
+              mainAxisAlignment: MainAxisAlignment.start, //change here don't //worked
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                new Expanded(
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
+                    child:  _createWorker1Ddl(widget.mProject.workers),
+                  ),
+                ),
+                new Expanded(
+                  child: Padding(
+                    padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
+                    child:  _createWorker2Ddl(widget.mProject.workers),
+                  ),
+                )
+
+              ],
+
+            ),
         new Row(
           mainAxisAlignment: MainAxisAlignment.start, //change here don't //worked
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             new Expanded(
               flex: 3,
-              child: _createStartTimeDdl(CommonFunction.getAllSiftWorkHours()),
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(5, 10, 0, 0),
+                child: _createStartTimeDdl(CommonFunction.getAllSiftWorkHours()),
+              ),
             ),
             new Expanded(
               flex: 3,
-              child: _createEndTimeDdl(CommonFunction.getAllSiftWorkHours()),
+              child: Padding(
+                padding: EdgeInsetsDirectional.fromSTEB(5, 10, 0, 0),
+                child: _createEndTimeDdl(CommonFunction.getAllSiftWorkHours()),
+              ),
             ),
             if(_selectedTask !=null && _selectedTask.logType.contains('P'))
             new Expanded(
@@ -718,7 +514,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                   ],
                   decoration: const InputDecoration(
                     hintText: 'Start(M)',
-                    labelText: 'Start(M)',
 
                   ),
                   controller: startMController,
@@ -743,27 +538,51 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                     ],
                     decoration: const InputDecoration(
                       hintText: 'End(M)',
-                      labelText: 'End(M)',
                     ),
                     controller:  endMController,
                     textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            if(hasPermitStatus)
-            new Expanded(
-              flex: 1,
-              child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 0),
-                child: IconButton(
-                  icon: Icon(taskLogAddNew?Icons.add:Icons.done),
-                  onPressed: () {
-                      setTaskLog();
-                  },
+
+          ],
+        ),
+        new Row(
+          mainAxisAlignment: MainAxisAlignment.start, //change here don't //worked
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+//            if(_selectedTask!=null && _selectedTask.logType.contains('C'))
+              new Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 0),
+                  child:  new TextFormField(
+                    decoration: const InputDecoration(
+                        hintText: 'Note',
+                    ),
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(50),
+                    ],
+
+                    controller: noteController,
+
+                  ),
                 ),
               ),
-            ),
+            if(hasPermitStatus)
+              new Expanded(
+                child: Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 0),
+                  child: FlatButton(
+                    child: Text(taskLogAddNew?'ADD':'Update',style: TextStyle(color: Colors.blueAccent),),
+                    onPressed: () {
+                      setTaskLog();
+                    },
+                  ),
+                ),
+              ),
           ],
+
         ),
         new Container(
           color: Colors.grey,
@@ -783,18 +602,18 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                     flex: 2,
                     child:Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 5),
-                      child: new Text("Worker",style: TextStyle(fontSize: 16.0),) ,
+                      child: new Text("Start Time",style: TextStyle(fontSize: 16.0),) ,
                     )
                 ),
                 new Expanded(
                     flex: 2,
                     child:Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 5),
-                      child: new Text("Work(H)",style: TextStyle(fontSize: 16.0),) ,
+                      child: new Text("End Time",style: TextStyle(fontSize: 16.0),) ,
                     )
                 ),
                 new Expanded(
-                    flex: 2,
+                    flex: 3,
                     child:Padding(
                       padding: EdgeInsetsDirectional.fromSTEB(5, 0, 0, 5),
                       child: new Text("Note",style: TextStyle(fontSize: 16.0),) ,
@@ -816,6 +635,164 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       ],
     );
 
+  }
+  Widget _createRigsDdl(List<Rigs> values){
+    values.sort((a,b) => a.serial.compareTo(b.serial));
+    return DropdownButton<Rigs>(
+      hint: Text("Select Rigs"), // Not necessary for Option 1//
+      value: _selectedRigs==null?_selectedRigs:values.where((i) =>i.serial==_selectedRigs.serial).first as Rigs,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedRigs = newValue;
+          worksheetUpdate = true;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<Rigs>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 0, 0, 0),
+            child: new Text(data.serial, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createTaskDdl(List<Task> values){
+    values.sort((a,b) => a.name.compareTo(b.name));
+    return DropdownButton<Task>(
+      hint: Text("Task"), // Not necessary for Option 1//
+      value: _selectedTask==null?_selectedTask:values.where( (i) => i.name == _selectedTask.name).first as Task,
+      elevation: 16,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedTask = newValue;
+        });
+      },
+      isExpanded: true,
+      items: values.map((data) {
+        return DropdownMenuItem<Task>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.name, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createCoreDdl(List<CoreSize> values){
+    values.sort((a,b) => a.core.compareTo(b.core));
+    return DropdownButton<CoreSize>(
+      hint: Text("Core Size"), // Not necessary for Option 1//
+      value: _selectedCoreSize==null?_selectedCoreSize:values.where((i) =>i.core==_selectedCoreSize.core).first as CoreSize,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedCoreSize = newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<CoreSize>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.core, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createDrillerDdl(List<Worker> values){
+    values.sort((a,b) => (a.lastName+a.firstName).compareTo(b.lastName+b.firstName));
+    return DropdownButton<Worker>(
+      hint: Text("Select Driller"), // Not necessary for Option 1//
+      value: _selectedDriller == null?_selectedDriller:values.where((i) =>i.lastName==_selectedDriller.lastName &&
+          i.firstName==_selectedDriller.firstName).first as Worker,
+      elevation: 16,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedDriller= newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<Worker>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.lastName+' '+data.firstName, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createHelperDdl(List<Worker> values){
+    values.sort((a,b) => (a.lastName+a.firstName).compareTo(b.lastName+b.firstName));
+    return DropdownButton<Worker>(
+      hint: Text("Select Helper"), // Not necessary for Option 1//
+      value: _selectedHelper == null?_selectedHelper:values.where((i) =>i.lastName==_selectedHelper.lastName &&
+          i.firstName==_selectedHelper.firstName).first as Worker,
+      elevation: 16,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedHelper= newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<Worker>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.lastName+' '+data.firstName, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createWorker1Ddl(List<Worker> values){
+    values.sort((a,b) => (a.lastName+a.firstName).compareTo(b.lastName+b.firstName));
+    return DropdownButton<Worker>(
+      hint: Text("Select Worker1"), // Not necessary for Option 1//
+      value: _selectedWorker1 == null?_selectedWorker1:values.where((i) =>i.lastName==_selectedWorker1.lastName &&
+          i.firstName==_selectedWorker1.firstName).first as Worker,
+      elevation: 16,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedWorker1= newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<Worker>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.lastName+' '+data.firstName, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
+  Widget _createWorker2Ddl(List<Worker> values){
+    values.sort((a,b) => (a.lastName+a.firstName).compareTo(b.lastName+b.firstName));
+    return DropdownButton<Worker>(
+      hint: Text("Select Worker2"), // Not necessary for Option 1//
+      value: _selectedWorker2 == null?_selectedWorker2:values.where((i) =>i.lastName==_selectedWorker2.lastName &&
+          i.firstName==_selectedWorker2.firstName).first as Worker,
+      elevation: 16,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedWorker2= newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<Worker>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.lastName+' '+data.firstName, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
   }
   Widget _createStartTimeDdl(List<String> values){
     return DropdownButton<String>(
@@ -851,6 +828,28 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       }).toList(),
     );
   }
+  Widget _createMaterialDdl(List<MaterialItems> values){
+    values.sort((a,b) => (a.name+a.details).compareTo(b.name+b.details));
+    return DropdownButton<MaterialItems>(
+      hint: Text("Select Material"), // Not necessary for Option 1//
+      value: _selectedMaterial==null?_selectedMaterial:values.where((i) =>i.name==_selectedMaterial.name &&
+        i.details==_selectedMaterial.details).first as MaterialItems,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedMaterial = newValue;
+        });
+      },
+      items: values.map((data) {
+        return DropdownMenuItem<MaterialItems>(
+          child: new Padding(
+            padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 10),
+            child: new Text(data.name+" "+data.details, style: TextStyle(fontSize: 15.0),),
+          ),
+          value: data,
+        );
+      }).toList(),
+    );
+  }
   Widget loadMaterialForm(){
     if(_isLoading){
       return _showCircularProgress();
@@ -865,16 +864,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               flex: 5,
                 child: Padding(
                   padding: EdgeInsetsDirectional.fromSTEB(10, 10, 10, 10),
-                  child: ddlMaterials,
+                  child: _createMaterialDdl(widget.mProject.materials),
                 ),
             ),
             new Expanded(
-              flex: 3,
+              flex: 2,
               child: Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(5, 10, 10, 10),
+                padding: EdgeInsetsDirectional.fromSTEB(5, 0, 5, 5),
                 child: new TextFormField(
                   decoration: InputDecoration(
-                    labelText: 'Quantity',
                     hintText: 'Quantity'
                   ),
                   controller: materialQtyController,
@@ -891,9 +889,9 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             new Expanded(
               flex: 2,
                 child: Padding(
-                  padding: EdgeInsetsDirectional.fromSTEB(0, 10, 10, 10),
-                  child: new IconButton(
-                    icon: Icon(addNewMaterial?Icons.add:Icons.done),
+                  padding: EdgeInsetsDirectional.fromSTEB(0, 10, 5, 0),
+                  child: new FlatButton(
+                    child: Text(addNewMaterial?'Add':'Update',style: TextStyle(color: Colors.blueAccent)),
                     onPressed: (){
                       setConsumeMaterial();
                     },
@@ -1045,7 +1043,8 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         taskLog.coreSize = _selectedCoreSize;
         taskLog.startMeter = double.parse(startMController.text.isEmpty?"0":startMController.text);
         taskLog.endMeter = double.parse(endMController.text.isEmpty?"0":endMController.text);
-        taskLog.worker = _selectedWorker;
+        taskLog.worker1 = _selectedWorker1;
+        taskLog.worker2 = _selectedWorker2;
         taskLog.driller = _selectedDriller;
         taskLog.helper = _selectedHelper;
         var startTime = timeFormat.parse(taskLog.startTime);
@@ -1089,12 +1088,12 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     _endTime = "7:00 AM";
     _startMeter = 0;
     _endMeter = 0;
-    _selectedWorker = null;
+    _selectedWorker1 = null;
+    _selectedWorker2 = null;
+    _selectedDriller = null;
+    _selectedHelper = null;
     _selectedNote ="";
     _selectedCoreSize = null;
-    taskController.text="";
-    coreSizeController.text="";
-    workerController.text="";
     noteController.text="";
     startMController.text="";
     endMController.text="";
@@ -1105,24 +1104,10 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _showDialog("Please choose Rigs");
       return false;
     }
-    else if(_selectedRigs.serial.toLowerCase()!=rigController.text.toLowerCase()){
-      _showDialog("Please choose Rigs");
-      return false;
-    }
+
     if(_workDate == null){
       _showDialog("Please put work date");
       return false;
-    }
-    if(holeController.text != null && holeController.text.isNotEmpty ){
-
-//      if(_selectedHoles==null){
-//        _showDialog("Please select valid holes");
-//        return false;
-//      }
-//      if(_selectedHoles.toLowerCase()!=holeController.text.toLowerCase()){
-//        _showDialog("Please select valid holes");
-//        return false;
-//      }
     }
     return true;
   }
@@ -1132,10 +1117,20 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       _showDialog("Please Choose task");
       return false;
     }
+    if(_selectedTask.logType.contains("X")){
+      if(_selectedDriller == null && _selectedHelper == null){
+        _showDialog("Please choose driller or helper");
+        return false;
+      }
+    }
     if(_selectedTask.logType.contains('E')){
-      if(_selectedWorker == null){
-        _showDialog("Please worker!");
+      if(_selectedWorker1 == null){
+        _showDialog("Please choose worker!");
             return false;
+      }
+      if(_selectedWorker1 !=null && _selectedWorker1==_selectedWorker2){
+        _showDialog("Please choose different worker!");
+        return false;
       }
     }
 
@@ -1146,6 +1141,15 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
         _showDialog("End meter can not be less than Start meter");
         return false;
       }
+    }
+    var startTime = timeFormat.parse(_startTime);
+    var endTime = timeFormat.parse(_endTime);
+    if(startTime.isAfter(endTime))
+      endTime = endTime.add(Duration(days: 1));
+    var hoursWorked = endTime.difference(startTime);
+    if(hoursWorked.inMinutes<=0){
+      _showDialog("Start Time Can not be smaller than End time");
+      return false;
     }
     return true;
   }
@@ -1185,7 +1189,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     _selectedUsedMaterial = null;
     _selectedMaterial = null;
     materialQtyController.text = "";
-    materialItemController.text = "";
   }
   void clearComment(){
     commentController.text = "";
@@ -1268,11 +1271,12 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
             _endMeter = _taskLogs[index].endMeter;
             String displayWorker ="";
             if(_taskLogs[index].task.logType.contains("X")){
-              displayWorker = _taskLogs[index].driller !=null?(_taskLogs[index].driller.lastName+' '+ _taskLogs[index].driller.firstName+'(D)\n'):'';
-              displayWorker+= _taskLogs[index].helper !=null?(_taskLogs[index].helper.lastName+' '+ _taskLogs[index].helper.firstName+'(H)'):'';
+              displayWorker = _taskLogs[index].driller !=null?('(D)'+_taskLogs[index].driller.lastName+' '+ _taskLogs[index].driller.firstName+'\n'):'';
+              displayWorker+= _taskLogs[index].helper !=null?('(H)'+_taskLogs[index].helper.lastName+' '+ _taskLogs[index].helper.firstName+''):'';
             }
             else if(_taskLogs[index].task.logType.contains("E")){
-              displayWorker = _taskLogs[index].worker !=null?(_taskLogs[index].worker.lastName+' '+ _taskLogs[index].worker.firstName):'';
+              displayWorker = _taskLogs[index].worker1 !=null?(_taskLogs[index].worker1.lastName+' '+ _taskLogs[index].worker1.firstName+'(1)\n'):'';
+              displayWorker += _taskLogs[index].worker2 !=null?(_taskLogs[index].worker2.lastName+' '+ _taskLogs[index].worker2.firstName)+'(2)':'';
             }
             String displayProgress;
             double workDoneProgress=0;
@@ -1294,19 +1298,19 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
                 new Expanded(
                   flex:2,
                   child:ListTile(
-                    title: Text(displayWorker),
+                    title: Text(_taskLogs[index].startTime),
                   ),
                 ),
                 new Expanded(
                   flex:2,
                   child:ListTile(
-                    title: Text(duration),
+                    title: Text(_taskLogs[index].endTime),
                   ),
                 ),
                 new Expanded(
-                  flex:2,
+                  flex:3,
                   child:ListTile(
-                    title: Text(workDoneProgress>0?displayProgress:displayNote),
+                    title: Text(displayNote),
                   ),
                 ),
                 new Expanded(
@@ -1360,7 +1364,7 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
               new Expanded(
                 flex: 5,
                 child:ListTile(
-                  title: Text(_consumeMaterials[index].material.name),
+                  title: Text(_consumeMaterials[index].material.name+'-'+_consumeMaterials[index].material.details),
                 ),
               ),
               new Expanded(
@@ -1452,15 +1456,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       {
         taskIndexForUpdate = index;
         _selectedTask = _taskLogs[index].task;
-        taskController.text=_selectedTask.name;
         _selectedCoreSize =_taskLogs[index].coreSize;
-        coreSizeController.text =_selectedCoreSize!=null?_selectedCoreSize.core:'';
-        _selectedWorker =_taskLogs[index].worker;
-        workerController.text=_selectedWorker!=null? _selectedWorker.lastName+' '+ _selectedWorker.firstName:'';
+        _selectedWorker1 =_taskLogs[index].worker1;
+        _selectedWorker2 =_taskLogs[index].worker2;
         _selectedDriller = _taskLogs[index].driller;
-        drillerController.text=_selectedDriller !=null? _selectedDriller.lastName+' '+_selectedDriller.firstName:'';
         _selectedHelper = _taskLogs[index].helper;
-        helperController.text = _selectedHelper!=null?_selectedHelper.lastName +' '+_selectedHelper.firstName:'';
         _startTime = _taskLogs[index].startTime;
         _endTime = _taskLogs[index].endTime;
         _startMeter =_taskLogs[index].startMeter;
@@ -1476,7 +1476,6 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
       usedMaterialIndexForUpdate = index;
       _selectedUsedMaterial = _consumeMaterials[index];
       _selectedMaterial = _selectedUsedMaterial.material;
-      materialItemController.text = _selectedMaterial.name;
       materialQtyController.text = _selectedUsedMaterial.qty.toString();
 
     }
@@ -1499,6 +1498,11 @@ class _WorkSheetPageState extends State<WorkSheetPage>{
     widget.mWorkSheet.taskLogs = _taskLogs;
     widget.mWorkSheet.consumeMaterials = _consumeMaterials;
     widget.mWorkSheet.comments = _comments;
+    if(_selectedWorkSheetStatus == null && widget.mWorkSheet.currentStatus == null){
+      _selectedWorkSheetStatus = new WorkSheetStatus("enableOP");
+      _selectedWorkSheetStatus.entryBy=widget.mUser;
+      _selectedWorkSheetStatus.entryDate = new DateTime.now();
+    }
     saveWorkSheetDB();
 //    widget.mWorkSheet.status;
     setState(() {
