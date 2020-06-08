@@ -1254,6 +1254,12 @@ class _WorkSheetPageState extends State<WorkSheetPage> with WidgetsBindingObserv
       return _showCircularProgress();
     if(_taskLogs !=null && _taskLogs.length>0)
       {
+
+          _taskLogs.sort((a,b){
+            var aStartTime = timeFormat.parse(a.startTime);
+            var bStartTime = timeFormat.parse(b.startTime);
+            return aStartTime.compareTo(bStartTime);
+          });
         return ListView.separated(
           shrinkWrap: true,
           separatorBuilder: (context, index) {
