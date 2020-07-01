@@ -640,7 +640,7 @@ class _WorkSheetPageState extends State<WorkSheetPage> with WidgetsBindingObserv
     values.sort((a,b) => a.serial.compareTo(b.serial));
     return DropdownButton<Rigs>(
       hint: Text("Select Rigs"), // Not necessary for Option 1//
-      value: _selectedRigs==null?_selectedRigs:values.where((i) =>i.serial==_selectedRigs.serial).first as Rigs,
+      value: _selectedRigs==null?_selectedRigs:values.firstWhere((i) =>i.serial==_selectedRigs.serial ,orElse: () => null) as Rigs,
       onChanged: (newValue) {
         setState(() {
           _selectedRigs = newValue;
@@ -829,7 +829,7 @@ class _WorkSheetPageState extends State<WorkSheetPage> with WidgetsBindingObserv
     );
   }
   Widget _createMaterialDdl(List<MaterialItems> values){
-    values.sort((a,b) => (a.name+a.details).compareTo(b.name+b.details));
+    values.sort((a,b) => (a.name+a.details).compareTo(""+b.name+b.details));
     return DropdownButton<MaterialItems>(
       hint: Text("Select Material"), // Not necessary for Option 1//
       value: _selectedMaterial==null?_selectedMaterial:values.where((i) =>i.name==_selectedMaterial.name &&

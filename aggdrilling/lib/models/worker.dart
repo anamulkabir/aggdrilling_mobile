@@ -6,6 +6,7 @@ class Worker{
   String designation;
   String skills;
   String type;
+  String workerId;
   Worker(this.firstName,this.middleName, this.lastName, this.designation);
   Worker.fromDocumentSnapShot(DocumentSnapshot snapshot)
   {
@@ -13,6 +14,7 @@ class Worker{
     this.middleName = snapshot.data["middleName"];
     this.lastName = snapshot.data["lastName"];
     this.designation = snapshot.data["designation"];
+    this.workerId = snapshot.data["workerId"];
     this.type = snapshot.data["type"];
   }
   Worker.fromDs(Map<dynamic,dynamic> worker)
@@ -22,6 +24,7 @@ class Worker{
       this.lastName = worker["lastName"];
       this.type = worker["type"];
       this.designation = worker["designation"];
+      this.workerId = worker["workerId"];
 
   }
   static List<Worker> fromDsList(List<dynamic> workers){
@@ -33,6 +36,7 @@ class Worker{
     'middleName': this.middleName,
     'lastName': this.lastName,
     'type': this.type,
+    'workerId':this.workerId,
     'designation': this.designation
   };
 }
