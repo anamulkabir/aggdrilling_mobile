@@ -37,7 +37,7 @@ class TaskLog{
       this.helper = Worker.fromDs(ds["helper"]);
     }
     this.shift = ds["shift"];
-    this.workHours = ds["hoursWork"];
+    this.workHours = ds["workHours"];
     if(this.task.logType.contains("P")){
       this.startMeter = ds["mFrom"];
       this.endMeter = ds["mTo"];
@@ -61,7 +61,7 @@ class TaskLog{
       this.startTime = document.data["startTime"];
       this.endTime = document.data["endTime"];
       this.shift = document.data["shift"];
-      this.workHours = document.data["hoursWork"];
+      this.workHours = double.parse(document.data["workHours"].toString());
       if(this.task.logType.contains("P")){
         this.startMeter = double.parse(document.data["startMeter"].toString());
         this.endMeter = double.tryParse(document.data["endMeter"].toString());

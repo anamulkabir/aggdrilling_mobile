@@ -11,6 +11,10 @@ class MaterialItems{
   MaterialItems.fromDs(Map<dynamic,dynamic> ds){
     this.name = ds["name"];
     this.details = ds["details"];
+    this.refkey = ds["refKey"];
+    this.materialId = ds["materialId"];
+    this.unit = ds["unit"]==null?"":ds["unit"];
+    this.unitPrice = ds["unitPrice"]==null?"":ds["unitPrice"].toString();
   }
   MaterialItems.fromDocument(DocumentSnapshot snapshot){
 

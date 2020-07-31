@@ -1,30 +1,31 @@
+import 'package:aggdrilling/utils/input_format.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 class Worker{
   String firstName;
-  String middleName;
   String lastName;
   String designation;
   String skills;
   String type;
   String workerId;
-  Worker(this.firstName,this.middleName, this.lastName, this.designation);
+  String employeeId;
+  Worker(this.firstName,this.lastName, this.designation);
   Worker.fromDocumentSnapShot(DocumentSnapshot snapshot)
   {
     this.firstName = snapshot.data["firstName"];
-    this.middleName = snapshot.data["middleName"];
     this.lastName = snapshot.data["lastName"];
     this.designation = snapshot.data["designation"];
     this.workerId = snapshot.data["workerId"];
+    this.employeeId = snapshot.data["employeeId"];
     this.type = snapshot.data["type"];
   }
   Worker.fromDs(Map<dynamic,dynamic> worker)
   {
       this.firstName = worker["firstName"];
-      this.middleName = worker["middleName"];
       this.lastName = worker["lastName"];
       this.type = worker["type"];
       this.designation = worker["designation"];
       this.workerId = worker["workerId"];
+      this.employeeId = worker["employeeId"];
 
   }
   static List<Worker> fromDsList(List<dynamic> workers){
@@ -33,10 +34,10 @@ class Worker{
   }
   Map<String, dynamic> toJson()=>{
     'firstName':this.firstName,
-    'middleName': this.middleName,
     'lastName': this.lastName,
     'type': this.type,
     'workerId':this.workerId,
+    'employeeId':this.employeeId,
     'designation': this.designation
   };
 }
